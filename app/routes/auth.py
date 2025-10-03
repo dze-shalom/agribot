@@ -1143,3 +1143,48 @@ def get_recent_activity():
     except Exception as e:
         print(f"Error fetching recent activity: {str(e)}")
         return jsonify({'error': 'Failed to fetch activity', 'details': str(e)}), 500
+
+@auth_bp.route('/temp-reset-password', methods=['POST'])
+def temp_reset_password():
+    """
+    TEMPORARY endpoint to reset admin password
+    TODO: REMOVE THIS ENDPOINT AFTER USE FOR SECURITY
+    """
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        new_password = data.get('new_password')
+        secret_key = data.get('secret_key')
+
+        # Simple security check - require a secret key
+        if secret_key != 'AGRIBOT_TEMP_RESET_2024':
+            return jsonify({'error': 'Invalid secret key'}), 403
+
+        if not email or not new_password:
+            return jsonify({'error': 'Email and new password required'}), 400
+
+        # Find user by email
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'error': f'User with email {email} not found'}), 404
+
+        # Update password
+        user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+
+        logger.info(f"Password reset for user: {email}")
+
+        return jsonify({
+            'success': True,
+            'message': f'Password reset successful for {user.name} ({user.email})',
+            'user': {
+                'name': user.name,
+                'email': user.email,
+                'account_type': user.account_type.value if hasattr(user.account_type, 'value') else user.account_type
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Error resetting password: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to reset password', 'details': str(e)}), 500
