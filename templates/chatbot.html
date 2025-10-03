@@ -68,11 +68,12 @@
             width: 280px;
             background: var(--sidebar-bg);
             border-right: 1px solid var(--border-color);
-            padding: 25px 20px;
+            padding: 25px 20px 90px 20px; /* Extra bottom padding for fixed button */
             display: flex;
             flex-direction: column;
             overflow-y: auto;
             transition: background 0.3s ease;
+            position: relative;
         }
 
         .chat-header {
@@ -417,19 +418,26 @@
         }
 
         .clear-btn {
-            width: 100%;
-            padding: 10px;
-            background: #6c757d;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: calc(280px - 40px); /* sidebar width minus padding */
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            margin-top: auto;
             font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            z-index: 100;
         }
 
         .clear-btn:hover {
-            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
         }
 
         .logout-btn {
@@ -1000,6 +1008,20 @@
 
             .sidebar.mobile-open {
                 left: 0;
+            }
+
+            /* New Conversation button on mobile */
+            .clear-btn {
+                position: fixed;
+                bottom: 20px;
+                left: -300px; /* Hidden by default */
+                width: calc(280px - 40px);
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.mobile-open ~ * .clear-btn,
+            .sidebar.mobile-open .clear-btn {
+                left: 20px; /* Visible when sidebar open */
             }
 
             /* Overlay when sidebar is open on mobile */
