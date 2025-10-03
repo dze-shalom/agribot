@@ -1147,13 +1147,14 @@ def get_recent_activity():
 @auth_bp.route('/temp-reset-password', methods=['POST'])
 def temp_reset_password():
     """
-    TEMPORARY endpoint to reset admin password
+    TEMPORARY endpoint to reset or create admin account
     TODO: REMOVE THIS ENDPOINT AFTER USE FOR SECURITY
     """
     try:
         data = request.get_json()
         email = data.get('email')
         new_password = data.get('new_password')
+        name = data.get('name', 'Admin')
         secret_key = data.get('secret_key')
 
         # Simple security check - require a secret key
@@ -1165,18 +1166,35 @@ def temp_reset_password():
 
         # Find user by email
         user = User.query.filter_by(email=email).first()
-        if not user:
-            return jsonify({'error': f'User with email {email} not found'}), 404
 
-        # Update password
-        user.password_hash = generate_password_hash(new_password)
-        db.session.commit()
+        if user:
+            # User exists - reset password
+            user.password_hash = generate_password_hash(new_password)
+            db.session.commit()
+            action = 'reset'
+        else:
+            # User doesn't exist - create new admin
+            from database.models.user import AccountType
+            user = User(
+                name=name,
+                email=email,
+                phone=None,
+                country='Cameroon',
+                region='centre',
+                account_type=AccountType.ADMIN,
+                password_hash=generate_password_hash(new_password),
+                created_at=datetime.now(timezone.utc)
+            )
+            db.session.add(user)
+            db.session.commit()
+            action = 'created'
 
-        logger.info(f"Password reset for user: {email}")
+        logger.info(f"Admin account {action} for user: {email}")
 
         return jsonify({
             'success': True,
-            'message': f'Password reset successful for {user.name} ({user.email})',
+            'action': action,
+            'message': f'Admin account {action} successfully!',
             'user': {
                 'name': user.name,
                 'email': user.email,
@@ -1185,6 +1203,6 @@ def temp_reset_password():
         })
 
     except Exception as e:
-        logger.error(f"Error resetting password: {str(e)}")
+        logger.error(f"Error managing admin account: {str(e)}")
         db.session.rollback()
-        return jsonify({'error': 'Failed to reset password', 'details': str(e)}), 500
+        return jsonify({'error': 'Failed to manage admin account', 'details': str(e)}), 500
