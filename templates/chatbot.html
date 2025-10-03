@@ -1342,6 +1342,7 @@
         let confidenceScores = [];
         let showDebug = false;
         let currentUser = null;
+        let currentAbortController = null; // For canceling requests
 
         // DOM elements
         const messagesContainer = document.getElementById('messagesContainer');
@@ -1959,8 +1960,14 @@
             // Clear input and show typing
             messageInput.value = '';
             messageInput.style.height = 'auto';
-            sendButton.disabled = true;
+
+            // Change button to cancel mode
+            sendButton.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M6 18L18 6" stroke="currentColor" stroke-width="2"/></svg>';
+            sendButton.onclick = cancelRequest;
             showTyping();
+
+            // Create abort controller for this request
+            currentAbortController = new AbortController();
 
             try {
                 const response = await fetch('/chat/message', {
@@ -1972,7 +1979,8 @@
                         user_region: userRegion,
                         language: userLanguage,
                         conversation_id: conversationId
-                    })
+                    }),
+                    signal: currentAbortController.signal
                 });
 
                 const data = await response.json();
@@ -2001,13 +2009,28 @@
 
             } catch (error) {
                 hideTyping();
-                addMessage('Sorry, I\'m having trouble connecting. Please check your internet and try again.', 'bot');
-                updateSessionInfo('Connection error');
-                console.error('Chat error:', error);
+                if (error.name === 'AbortError') {
+                    addMessage('Request cancelled by user.', 'bot');
+                    updateSessionInfo('Request cancelled');
+                } else {
+                    addMessage('Sorry, I\'m having trouble connecting. Please check your internet and try again.', 'bot');
+                    updateSessionInfo('Connection error');
+                    console.error('Chat error:', error);
+                }
             } finally {
+                // Reset button to send mode
+                sendButton.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z" fill="currentColor"/></svg>';
+                sendButton.onclick = null;
                 sendButton.disabled = false;
+                currentAbortController = null;
                 messageInput.focus();
                 saveConversationState();
+            }
+        }
+
+        function cancelRequest() {
+            if (currentAbortController) {
+                currentAbortController.abort();
             }
         }
 
@@ -2685,22 +2708,8 @@
             }
         }
 
-        // Close sidebar when clicking on links inside it (for better UX)
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('sidebar');
-
-            // Close sidebar when clicking logout or clear conversation on mobile
-            const clearBtn = sidebar.querySelector('.clear-btn');
-            const logoutOption = sidebar.querySelector('[onclick="logout()"]');
-
-            if (clearBtn) {
-                clearBtn.addEventListener('click', function() {
-                    if (window.innerWidth <= 768) {
-                        toggleMobileSidebar();
-                    }
-                });
-            }
-        });
+        // Don't auto-close sidebar - let user close it manually
+        // This was causing the sidebar to flash and disappear on mobile
     </script>
 </body>
 </html>
