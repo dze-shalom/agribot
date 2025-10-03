@@ -43,23 +43,25 @@ def process_message():
         message = data.get('message', '').strip()
         user_name = data.get('user_name', 'Friend')
         user_region = data.get('user_region', 'centre').lower()
+        language = data.get('language', 'en')
         include_external_data = data.get('include_external_data', True)
-        
+
         # Get or create user session
         if 'user_id' not in session:
             session['user_id'] = str(uuid.uuid4())
-        
+
         user_id = session['user_id']
-        
+
         # Get AgriBot engine from app context
         agribot_engine = current_app.agribot
-        
+
         # Process message
         response_data = agribot_engine.process_message(
             message=message,
             user_id=user_id,
             user_name=user_name,
             user_region=user_region,
+            language=language,
             include_external_data=include_external_data
         )
         

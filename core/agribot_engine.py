@@ -67,7 +67,7 @@ class AgriBotEngine:
         self.logger.info("AgriBot Engine initialized successfully")
     
     def process_message(self, message: str, user_id: str, user_name: str = 'Friend',
-                       user_region: str = 'centre', include_external_data: bool = True) -> Dict[str, Any]:
+                       user_region: str = 'centre', language: str = 'en', include_external_data: bool = True) -> Dict[str, Any]:
         """Process a user message and return comprehensive response"""
         
         start_time = datetime.now()
@@ -94,6 +94,7 @@ class AgriBotEngine:
                     user_context = {
                         'name': user_name,
                         'region': user_region,
+                        'language': language,
                         'conversation_state': conversation_state
                     }
 
@@ -107,6 +108,7 @@ class AgriBotEngine:
                         user_input=message,
                         conversation_id=user_id,
                         user_context=user_context,
+                        language=language,
                         weather_data=external_data.get('weather'),
                         market_data=external_data.get('market')
                     )
