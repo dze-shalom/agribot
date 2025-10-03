@@ -47,18 +47,18 @@ class LoggingConfig:
     max_bytes: int = int(os.getenv('LOG_MAX_BYTES', str(10 * 1024 * 1024)))  # 10 MB
     backup_count: int = int(os.getenv('LOG_BACKUP_COUNT', '5'))
 
-@dataclass
 class AppConfig:
     """Main application configuration with validation"""
-    secret_key: str = os.getenv('FLASK_SECRET_KEY', 'dev-key-change-in-production')
-    debug: bool = os.getenv('FLASK_ENV') == 'development'
-    testing: bool = False
+    def __init__(self):
+        self.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-key-change-in-production')
+        self.debug = os.getenv('FLASK_ENV') == 'development'
+        self.testing = False
 
-    # Component configurations
-    database: DatabaseConfig = DatabaseConfig()
-    apis: APIConfig = APIConfig()
-    cache: CacheConfig = CacheConfig()
-    logging: LoggingConfig = LoggingConfig()
+        # Component configurations
+        self.database = DatabaseConfig()
+        self.apis = APIConfig()
+        self.cache = CacheConfig()
+        self.logging = LoggingConfig()
     
     def validate(self):
         """Validate critical configuration values and raise errors for missing keys"""
