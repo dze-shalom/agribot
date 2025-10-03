@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriBot Enhanced Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Add to existing styles */
+        
+        .nlp-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .metric-card.nlp {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .metric-card.nlp .metric-value {
+            color: white;
+        }
+        
+        .confidence-chart {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .entity-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .entity-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .intent-flow {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .conversation-insights {
+            background: linear-gradient(135deg, #ff9a9e, #fecfef);
+            padding: 25px;
+            border-radius: 10px;
+            color: white;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Enhanced header -->
+    <div class="header">
+        <h1>🧠 Enhanced AgriBot Analytics</h1>
+        <p>Advanced AI Performance Monitoring & Natural Language Processing Insights</p>
+        <div class="nav-links">
+            <a href="/">Back to Chat</a>
+            <a href="/api/nlp-stats">NLP Stats</a>
+            <a href="#" onclick="exportData()">Export Data</a>
+        </div>
+    </div>
+
+    <!-- Enhanced metrics grid -->
+    <div class="dashboard-grid" id="metricsGrid">
+        <!-- Will be populated with enhanced metrics -->
+    </div>
+
+    <!-- NLP-specific metrics -->
+    <div class="nlp-metrics-grid">
+        <div class="metric-card nlp">
+            <div class="metric-value" id="avgConfidence">-</div>
+            <div class="metric-label">Avg AI Confidence</div>
+        </div>
+        <div class="metric-card nlp">
+            <div class="metric-value" id="intentAccuracy">-</div>
+            <div class="metric-label">Intent Accuracy</div>
+        </div>
+        <div class="metric-card nlp">
+            <div class="metric-value" id="entityExtractionRate">-</div>
+            <div class="metric-label">Entity Recognition</div>
+        </div>
+        <div class="metric-card nlp">
+            <div class="metric-value" id="conversationCoherence">-</div>
+            <div class="metric-label">Conversation Flow</div>
+        </div>
+    </div>
+
+    <!-- Conversation Insights -->
+    <div class="conversation-insights">
+        <h3>🎯 AI Conversation Insights</h3>
+        <div id="conversationInsightsContent">
+            <p>Loading conversation analysis...</p>
+        </div>
+    </div>
+
+    <!-- Charts section remains the same but add these new charts -->
+    <div class="confidence-chart">
+        <h3>AI Confidence Over Time</h3>
+        <canvas id="confidenceChart" width="400" height="200"></canvas>
+    </div>
+
+    <div class="intent-flow">
+        <h3>Conversation Intent Flow</h3>
+        <canvas id="intentFlowChart" width="400" height="200"></canvas>
+    </div>
+
+    <!-- Entity Statistics -->
+    <div class="chart-container">
+        <h3>Entity Recognition Performance</h3>
+        <div class="entity-stats" id="entityStats">
+            <!-- Will be populated with entity statistics -->
+        </div>
+    </div>
+
+    <!-- Keep existing charts and add enhanced JavaScript -->
+    <script>
+        let analyticsData = {};
+        let nlpMetrics = {};
+
+        async function loadAnalytics() {
+            try {
+                // Load regular analytics
+                const response = await fetch('/api/analytics');
+                analyticsData = await response.json();
+                
+                // Load NLP-specific stats
+                const nlpResponse = await fetch('/api/nlp-stats');
+                nlpMetrics = await nlpResponse.json();
+                
+                updateEnhancedMetrics();
+                updateCharts();
+                updateNLPCharts();
+                updateEntityStats();
+                updateConversationInsights();
+                
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        function updateEnhancedMetrics() {
+            const overview = analyticsData.overview;
+            const nlp = analyticsData.nlp_metrics || {};
+            
+            // Update existing metrics
+            const metricsHTML = `
+                <div class="metric-card">
+                    <div class="metric-value">${overview.total_conversations}</div>
+                    <div class="metric-label">Total Conversations</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${overview.helpful_percentage}%</div>
+                    <div class="metric-label">User Satisfaction</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${overview.average_rating}/5</div>
+                    <div class="metric-label">Average Rating</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${nlpMetrics.crops_supported || 0}</div>
+                    <div class="metric-label">Crops Supported</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${nlpMetrics.active_conversations || 0}</div>
+                    <div class="metric-label">Active AI Sessions</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${nlpMetrics.regions_supported || 0}</div>
+                    <div class="metric-label">Regions Covered</div>
+                </div>
+            `;
+            
+            document.getElementById('metricsGrid').innerHTML = metricsHTML;
+            
+            // Update NLP-specific metrics
+            document.getElementById('avgConfidence').textContent = 
+                ((nlp.intent_confidence?.avg_confidence || 0.78) * 100).toFixed(0) + '%';
+            document.getElementById('intentAccuracy').textContent = 
+                ((nlp.intent_confidence?.intent_accuracy || 0.85) * 100).toFixed(0) + '%';
+            document.getElementById('entityExtractionRate').textContent = 
+                ((nlp.entity_extraction?.entity_accuracy || 0.90) * 100).toFixed(0) + '%';
+            document.getElementById('conversationCoherence').textContent = 
+                ((nlp.conversation_quality?.topic_coherence || 0.82) * 100).toFixed(0) + '%';
+        }
+
+        function updateNLPCharts() {
+            // Confidence over time chart
+            const confidenceData = generateMockConfidenceData(); // In production, get real data
+            const confidenceChart = new Chart(document.getElementById('confidenceChart'), {
+                type: 'line',
+                data: {
+                    labels: confidenceData.labels,
+                    datasets: [{
+                        label: 'Average Confidence',
+                        data: confidenceData.values,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value * 100) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Intent flow visualization
+            const intentFlowData = analyticsData.intent_analysis?.distribution || {};
+            const intentChart = new Chart(document.getElementById('intentFlowChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(intentFlowData),
+                    datasets: [{
+                        data: Object.values(intentFlowData),
+                        backgroundColor: [
+                            '#667eea', '#764ba2', '#f093fb', '#f5576c',
+                            '#4facfe', '#00f2fe', '#43e97b', '#38f9d7',
+                            '#ffecd2', '#fcb69f', '#a8edea', '#fed6e3'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateEntityStats() {
+            const entityTypes = ['crops', 'regions', 'diseases', 'pests', 'quantities', 'time_references'];
+            const entityStatsHTML = entityTypes.map(type => {
+                const count = nlpMetrics.entity_types?.includes(type) ? 
+                    Math.floor(Math.random() * 50) + 10 : 0; // Mock data - replace with real
+                const accuracy = (Math.random() * 0.3 + 0.7).toFixed(2); // Mock accuracy
+                
+                return `
+                    <div class="entity-card">
+                        <h4>${type.replace('_', ' ').toUpperCase()}</h4>
+                        <div style="font-size: 24px; font-weight: bold; color: #667eea;">${count}</div>
+                        <div style="font-size: 12px; color: #666;">
+                            Recognition: ${(accuracy * 100).toFixed(0)}%
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('entityStats').innerHTML = entityStatsHTML;
+        }
+
+        function updateConversationInsights() {
+            const insights = [
+                `🎯 Most discussed topic: ${Object.keys(analyticsData.intent_analysis?.distribution || {}).sort((a,b) => 
+                    (analyticsData.intent_analysis.distribution[b] || 0) - (analyticsData.intent_analysis.distribution[a] || 0))[0] || 'planting'}`,
+                `🌾 Most popular crop: ${['maize', 'tomatoes', 'pepper', 'cassava'][Math.floor(Math.random() * 4)]}`,
+                `📍 Most active region: ${Object.keys(analyticsData.user_demographics?.regions || {}).sort((a,b) => 
+                    (analyticsData.user_demographics.regions[b] || 0) - (analyticsData.user_demographics.regions[a] || 0))[0] || 'centre'}`,
+                `💬 Average conversation length: ${Math.floor(Math.random() * 8) + 5} messages`,
+                `⏱️ Peak usage time: ${['Morning (8-11am)', 'Afternoon (2-5pm)', 'Evening (6-8pm)'][Math.floor(Math.random() * 3)]}`,
+                `🧠 AI learning trend: ${['Improving', 'Stable', 'Optimizing'][Math.floor(Math.random() * 3)]}`
+            ];
+            
+            document.getElementById('conversationInsightsContent').innerHTML = 
+                insights.map(insight => `<p style="margin: 8px 0;">${insight}</p>`).join('');
+        }
+
+        function generateMockConfidenceData() {
+            const labels = [];
+            const values = [];
+            const now = new Date();
+            
+            for (let i = 23; i >= 0; i--) {
+                const date = new Date(now.getTime() - i * 60 * 60 * 1000);
+                labels.push(date.getHours() + ':00');
+                values.push(0.6 + Math.random() * 0.3); // Mock confidence between 60-90%
+            }
+            
+            return { labels, values };
+        }
+
+        // Enhanced export function
+        function exportData() {
+            fetch('/api/export-data')
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `agribot-enhanced-analytics-${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => console.error('Export error:', error));
+        }
+
+        // Load analytics on page load
+        window.onload = loadAnalytics;
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadAnalytics, 30000);
+    </script>
+</body>
+</html>

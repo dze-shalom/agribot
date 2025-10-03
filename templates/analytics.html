@@ -1,0 +1,3417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriBot Analytics Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/date-fns/1.30.1/index.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #ecf0f1;
+            --dark-bg: #34495e;
+            --text-light: #7f8c8d;
+            --border-color: #bdc3c7;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+            /* Light theme (default) */
+            --bg-primary: #ecf0f1;
+            --bg-secondary: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --sidebar-bg: #2c3e50;
+            --sidebar-text: #ffffff;
+            --card-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #ecf0f1;
+            --light-bg: #1a1a2e;
+            --dark-bg: #16213e;
+            --text-light: #a8b2d1;
+            --border-color: #3a3f58;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+
+            --bg-primary: #0f1419;
+            --bg-secondary: #1a1a2e;
+            --text-primary: #e6f1ff;
+            --text-secondary: #a8b2d1;
+            --sidebar-bg: #16213e;
+            --sidebar-text: #e6f1ff;
+            --card-bg: #1a1a2e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            padding: 20px 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            background: transparent;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .admin-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .admin-details {
+            flex: 1;
+        }
+
+        .admin-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .admin-role {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* Settings Dropdown in Admin Section */
+        .admin-info .settings-dropdown {
+            position: relative;
+        }
+
+        .admin-info .settings-trigger {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .admin-info .settings-trigger:hover {
+            background: var(--secondary-color);
+            color: white;
+            border-color: var(--secondary-color);
+            transform: rotate(90deg);
+        }
+
+        .admin-info .settings-menu {
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            min-width: 220px;
+            display: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .admin-info .settings-menu.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .settings-menu-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .settings-menu-item {
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            color: var(--text-primary);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .settings-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-menu-item:hover {
+            background: var(--light-bg);
+        }
+
+        .settings-menu-item.logout:hover {
+            background: #fee;
+            color: var(--danger-color);
+        }
+
+        .settings-menu-item i {
+            margin-right: 10px;
+            width: 18px;
+            text-align: center;
+        }
+
+        .settings-menu-item > div {
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-menu {
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left-color: var(--secondary-color);
+        }
+
+        .nav-icon {
+            width: 20px;
+            margin-right: 15px;
+            text-align: center;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logout-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 20px;
+            background: var(--light-bg);
+        }
+
+        .header {
+            background: var(--card-bg);
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header h1 {
+            color: var(--text-primary);
+            font-size: 28px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .region-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-secondary);
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .region-filter i {
+            color: var(--secondary-color);
+            font-size: 16px;
+        }
+
+        .region-filter select {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 5px;
+            outline: none;
+        }
+
+        .region-filter select option {
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .theme-toggle {
+            width: 48px;
+            height: 24px;
+            background: var(--border-color);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .theme-toggle.active {
+            background: var(--secondary-color);
+        }
+
+        .theme-toggle-slider {
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .theme-toggle.active .theme-toggle-slider {
+            transform: translateX(24px);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stat-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-change.positive {
+            color: var(--success-color);
+        }
+
+        .stat-change.negative {
+            color: var(--danger-color);
+        }
+
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chart-control {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .chart-control.active {
+            background: var(--secondary-color);
+            color: white;
+            border-color: var(--secondary-color);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Tables Section */
+        .tables-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .table-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        .table-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 25px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .data-table td {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .data-table tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Filters and Search */
+        .filters-section {
+            background: white;
+            padding: 20px 25px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+
+        .filter-input,
+        .filter-select {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+        }
+
+        .filter-input:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        /* Real-time Updates */
+        .realtime-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+        }
+
+        .realtime-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--success-color);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .activity-feed {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 14px;
+            color: white;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-text {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .activity-time {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        /* Regional Insights Section */
+        .regional-insights-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-header {
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 16px;
+        }
+
+        .section-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-header h3 i {
+            color: var(--primary-color);
+        }
+
+        .section-subtitle {
+            font-size: 14px;
+            color: var(--text-light);
+            margin: 0;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .insight-card {
+            background: var(--bg-light);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .insight-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .insight-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .insight-header i {
+            font-size: 20px;
+            color: var(--secondary-color);
+        }
+
+        .insight-header h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .insight-content {
+            min-height: 150px;
+        }
+
+        .insight-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .insight-item:last-child {
+            border-bottom: none;
+        }
+
+        .insight-label {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .insight-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+
+        .insight-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--success-color);
+            color: white;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+            
+            .main-content {
+                margin-left: 240px;
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .tables-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1000;
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+            
+            .header {
+                padding: 15px 20px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--secondary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Export Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        /* Logo Styling */
+        .logo-icon img {
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 50% !important;
+            object-fit: cover !important;
+            border: 2px solid rgba(255, 255, 255, 0.2) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <img src="/static/images/company-logo.jpeg" alt="Company Logo">
+                    </div>
+                    <div class="logo-text">AgriBot</div>
+                </div>
+                <div class="admin-info">
+                    <div class="admin-details">
+                        <div class="admin-name" id="adminName">Admin</div>
+                        <div class="admin-role">System Administrator</div>
+                    </div>
+
+                    <!-- Settings Dropdown in Admin Section -->
+                    <div class="settings-dropdown">
+                        <div class="settings-trigger" onclick="toggleSettingsMenu()">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="settings-menu" id="settingsMenu">
+                            <div class="settings-menu-header">
+                                <i class="fas fa-sliders-h"></i> Settings
+                            </div>
+                            <div class="settings-menu-item" onclick="toggleDarkMode()">
+                                <div>
+                                    <i class="fas fa-moon"></i>
+                                    <span id="themeLabel">Dark Mode</span>
+                                </div>
+                                <div class="theme-toggle" id="themeToggle">
+                                    <div class="theme-toggle-slider"></div>
+                                </div>
+                            </div>
+                            <div class="settings-menu-item logout" onclick="logout()">
+                                <div>
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    <span>Logout</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                    <span class="nav-icon"><i class="fas fa-tachometer-alt"></i></span>
+                    Dashboard
+                </a>
+                <a href="#users" class="nav-item" data-section="users">
+                    <span class="nav-icon"><i class="fas fa-users"></i></span>
+                    User Management
+                </a>
+                <a href="#conversations" class="nav-item" data-section="conversations">
+                    <span class="nav-icon"><i class="fas fa-comments"></i></span>
+                    Conversations
+                </a>
+                <a href="#analytics" class="nav-item" data-section="analytics">
+                    <span class="nav-icon"><i class="fas fa-chart-bar"></i></span>
+                    Analytics
+                </a>
+                <a href="#insights" class="nav-item" data-section="insights">
+                    <span class="nav-icon"><i class="fas fa-brain"></i></span>
+                    AI Insights
+                </a>
+                <a href="#reports" class="nav-item" data-section="reports">
+                    <span class="nav-icon"><i class="fas fa-file-alt"></i></span>
+                    Reports
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-left">
+                    <h1 id="pageTitle">Dashboard Overview</h1>
+                    <div class="region-filter">
+                        <i class="fas fa-globe"></i>
+                        <select id="regionFilter" onchange="filterByRegion(this.value)">
+                            <option value="all">All Regions</option>
+                            <option value="cameroon">Cameroon</option>
+                            <option value="nigeria">Nigeria</option>
+                            <option value="ghana">Ghana</option>
+                            <option value="kenya">Kenya</option>
+                            <option value="south-africa">South Africa</option>
+                            <option value="ethiopia">Ethiopia</option>
+                            <option value="tanzania">Tanzania</option>
+                            <option value="uganda">Uganda</option>
+                            <option value="other">Other Countries</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-warning" onclick="showExportModal()">
+                        Export Data
+                    </button>
+                    <button class="btn btn-success" onclick="refreshData()">
+                        Refresh Data
+                    </button>
+                    <button class="btn btn-primary" onclick="generateReport()">
+                        Generate Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="content-section">
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">Total Users</div>
+                            <div class="stat-icon" style="background: var(--secondary-color);"><i class="fas fa-users"></i></div>
+                        </div>
+                        <div class="stat-value" id="totalUsers">Loading...</div>
+                        <div class="stat-change positive">
+                            Real-time data
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">Active Users</div>
+                            <div class="stat-icon" style="background: var(--success-color);"><i class="fas fa-user-check"></i></div>
+                        </div>
+                        <div class="stat-value" id="activeUsers">Loading...</div>
+                        <div class="stat-change positive">
+                            Real-time data
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">Total Conversations</div>
+                            <div class="stat-icon" style="background: var(--warning-color);"><i class="fas fa-comments"></i></div>
+                        </div>
+                        <div class="stat-value" id="totalConversations">Loading...</div>
+                        <div class="stat-change positive">
+                            Real-time data
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">New Users</div>
+                            <div class="stat-icon" style="background: var(--primary-color);"><i class="fas fa-user-plus"></i></div>
+                        </div>
+                        <div class="stat-value" id="newUsers">Loading...</div>
+                        <div class="stat-change positive">
+                            Real-time data
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">AI Accuracy</div>
+                            <div class="stat-icon" style="background: var(--success-color);"><i class="fas fa-bullseye"></i></div>
+                        </div>
+                        <div class="stat-value" id="aiAccuracy">Loading...</div>
+                        <div class="stat-change positive">
+                            Real-time data
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">User Satisfaction</div>
+                            <div class="stat-icon" style="background: var(--warning-color);"><i class="fas fa-heart"></i></div>
+                        </div>
+                        <div class="stat-value" id="userSatisfaction">Loading...</div>
+                        <div class="stat-change positive">
+                            Real-time data
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-section">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title">User Activity Trends</div>
+                            <div class="chart-controls">
+                                <button class="chart-control active" data-period="7d">7 Days</button>
+                                <button class="chart-control" data-period="30d">30 Days</button>
+                                <button class="chart-control" data-period="90d">90 Days</button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title">Regional Distribution</div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="regionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Regional Insights Section -->
+                <div class="regional-insights-section" id="regionalInsightsSection">
+                    <div class="section-header">
+                        <h3><i class="fas fa-globe-africa"></i> Regional Insights</h3>
+                        <p class="section-subtitle">Detailed analytics by geographic region</p>
+                    </div>
+
+                    <div class="insights-grid">
+                        <!-- Top Regions Card -->
+                        <div class="insight-card">
+                            <div class="insight-header">
+                                <i class="fas fa-trophy"></i>
+                                <h4>Top Active Regions</h4>
+                            </div>
+                            <div class="insight-content" id="topRegionsContent">
+                                <div class="loading-spinner">Loading...</div>
+                            </div>
+                        </div>
+
+                        <!-- Regional Crops Card -->
+                        <div class="insight-card">
+                            <div class="insight-header">
+                                <i class="fas fa-seedling"></i>
+                                <h4>Popular Crops by Region</h4>
+                            </div>
+                            <div class="insight-content" id="regionalCropsContent">
+                                <div class="loading-spinner">Loading...</div>
+                            </div>
+                        </div>
+
+                        <!-- Regional Topics Card -->
+                        <div class="insight-card">
+                            <div class="insight-header">
+                                <i class="fas fa-comments"></i>
+                                <h4>Common Topics by Region</h4>
+                            </div>
+                            <div class="insight-content" id="regionalTopicsContent">
+                                <div class="loading-spinner">Loading...</div>
+                            </div>
+                        </div>
+
+                        <!-- Regional Growth Card -->
+                        <div class="insight-card">
+                            <div class="insight-header">
+                                <i class="fas fa-chart-line"></i>
+                                <h4>Regional Growth Trends</h4>
+                            </div>
+                            <div class="insight-content" id="regionalGrowthContent">
+                                <div class="loading-spinner">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Activity -->
+                <div class="realtime-section">
+                    <div class="realtime-header">
+                        <h3>Real-time Activity</h3>
+                        <div class="live-indicator">
+                            <div class="live-dot"></div>
+                            Live Updates
+                        </div>
+                    </div>
+                    <div class="activity-feed" id="activityFeed">
+                        <!-- Activity items will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Tables Section -->
+                <div class="tables-section">
+                    <div class="table-card">
+                        <div class="table-header">
+                            <div class="table-title">Recent Users</div>
+                            <button class="btn btn-primary" onclick="viewAllUsers()">View All</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Region</th>
+                                        <th>Joined</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentUsersTable">
+                                    <!-- Table data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="table-card">
+                        <div class="table-header">
+                            <div class="table-title">Top Crop Inquiries</div>
+                            <button class="btn btn-primary" onclick="viewCropAnalytics()">Details</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Crop</th>
+                                        <th>Inquiries</th>
+                                        <th>Trend</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cropInquiriesTable">
+                                    <!-- Table data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Section -->
+            <div id="users-section" class="content-section" style="display: none;">
+                <div class="filters-section">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label class="filter-label">Search Users</label>
+                            <input type="text" class="filter-input" placeholder="Search by name, email..." id="userSearch">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Region</label>
+                            <select class="filter-select" id="regionFilter">
+                                <option value="">All Regions</option>
+                                <option value="centre">Centre</option>
+                                <option value="littoral">Littoral</option>
+                                <option value="west">West</option>
+                                <option value="northwest">Northwest</option>
+                                <option value="southwest">Southwest</option>
+                                <option value="east">East</option>
+                                <option value="north">North</option>
+                                <option value="far_north">Far North</option>
+                                <option value="adamawa">Adamawa</option>
+                                <option value="south">South</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Status</label>
+                            <select class="filter-select" id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Actions</label>
+                            <button class="btn btn-primary" onclick="exportUsers()">Export Users CSV</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div class="table-title">User Management</div>
+                        <div class="header-actions">
+                            <button class="btn btn-success" onclick="addNewUser()">Add User</button>
+                            <button class="btn btn-warning" onclick="bulkActions()">Bulk Actions</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Region</th>
+                                    <th>Conversations</th>
+                                    <th>Last Active</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable">
+                                <!-- User data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversations Section -->
+            <div id="conversations-section" class="content-section" style="display: none;">
+                <div class="content-area"></div>
+            </div>
+
+            <!-- Analytics Section -->
+            <div id="analytics-section" class="content-section" style="display: none;">
+                <div class="content-area"></div>
+            </div>
+
+            <!-- AI Insights Section -->
+            <div id="insights-section" class="content-section" style="display: none;">
+                <div class="content-area"></div>
+            </div>
+
+            <!-- Reports Section -->
+            <div id="reports-section" class="content-section" style="display: none;">
+                <div class="stats-grid" style="margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">Available Reports</div>
+                            <div class="stat-icon" style="background: var(--secondary-color);"><i class="fas fa-file-download"></i></div>
+                        </div>
+                        <div class="stat-value" id="reportCount">4</div>
+                        <div class="stat-change positive">Ready to generate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-title">Last Generated</div>
+                            <div class="stat-icon" style="background: var(--success-color);"><i class="fas fa-clock"></i></div>
+                        </div>
+                        <div class="stat-value" style="font-size: 18px;" id="lastReportTime">Never</div>
+                        <div class="stat-change positive">Auto-refresh available</div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div class="table-title"><i class="fas fa-file-alt"></i> Report Templates</div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Report Type</th>
+                                    <th>Description</th>
+                                    <th>Format</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="fas fa-users"></i> Users Report</td>
+                                    <td>Complete user data with registration details</td>
+                                    <td><span class="status-badge" style="background: #e3f2fd; color: #1976d2;">CSV/JSON</span></td>
+                                    <td><button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="exportReport('users')">Generate</button></td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-comments"></i> Conversations Report</td>
+                                    <td>All conversations with messages and analytics</td>
+                                    <td><span class="status-badge" style="background: #e3f2fd; color: #1976d2;">CSV/JSON</span></td>
+                                    <td><button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="exportReport('conversations')">Generate</button></td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-chart-line"></i> Analytics Report</td>
+                                    <td>Usage statistics and performance metrics</td>
+                                    <td><span class="status-badge" style="background: #e3f2fd; color: #1976d2;">CSV/JSON</span></td>
+                                    <td><button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="exportReport('analytics')">Generate</button></td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-robot"></i> ML Training Dataset</td>
+                                    <td>Complete dataset for machine learning training</td>
+                                    <td><span class="status-badge" style="background: #e8f5e9; color: #2e7d32;">CSV</span></td>
+                                    <td><button class="btn btn-success" style="padding: 6px 12px; font-size: 12px;" onclick="exportReport('ml-dataset')">Generate</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="chart-card" style="margin-top: 30px;">
+                    <div class="chart-header">
+                        <div class="chart-title"><i class="fas fa-info-circle"></i> Report Generation Guide</div>
+                    </div>
+                    <div style="padding: 20px; color: var(--text-secondary); line-height: 1.8;">
+                        <p style="margin-bottom: 15px;"><strong style="color: var(--text-primary);">How to generate reports:</strong></p>
+                        <ol style="padding-left: 20px;">
+                            <li style="margin-bottom: 10px;">Click the "Generate" button for any report type above</li>
+                            <li style="margin-bottom: 10px;">The report will be automatically generated and downloaded</li>
+                            <li style="margin-bottom: 10px;">You can also use the "Export Data" button in the header for custom exports</li>
+                            <li style="margin-bottom: 10px;">ML Training Datasets include all necessary fields for model training</li>
+                        </ol>
+                        <p style="margin-top: 20px; padding: 12px; background: var(--bg-secondary); border-left: 4px solid var(--secondary-color); border-radius: 4px;">
+                            <i class="fas fa-lightbulb" style="color: var(--warning-color);"></i>
+                            <strong>Tip:</strong> Use the "Generate Report" button in the header to create a comprehensive system report.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div id="settings-section" class="content-section" style="display: none;">
+                <div class="content-area">
+                    <div style="padding: 20px;">
+                        <h3>System Settings</h3>
+                        <p style="color: #888; margin-top: 10px;">Settings panel coming soon</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Export Data</h2>
+                <button class="close-modal" onclick="closeExportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="filter-group">
+                    <label class="filter-label">Data Type</label>
+                    <select class="filter-select" id="exportType" onchange="showMLDatasetInfo()">
+                        <option value="users">▢ Users Data</option>
+                        <option value="conversations">▢ Conversations Data</option>
+                        <option value="messages-with-images">📷 Messages with Images (Full Details)</option>
+                        <option value="analytics">▢ Analytics Data</option>
+                        <option value="feedback">▢ Feedback Data</option>
+                        <option value="ml-dataset" style="background: #e8f5e9; font-weight: bold;">⚙ ML Training Dataset (Complete)</option>
+                        <option value="feedback-dataset" style="background: #e8f5e9; font-weight: bold;">▣ Feedback Dataset (Supervised Learning)</option>
+                        <option value="intent-dataset" style="background: #e8f5e9; font-weight: bold;">◉ Intent Classification Dataset</option>
+                    </select>
+                </div>
+                <div id="mlDatasetInfo" style="display: none; margin-top: 10px; padding: 15px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
+                    <strong style="color: #1976d2;">▦ ML Training Dataset</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #555;">
+                        Complete dataset with user questions, bot responses, intent classifications, confidence scores,
+                        entities, sentiment, and feedback ratings. Perfect for training agricultural chatbot ML models.
+                    </p>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Date Range</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="date" class="filter-input" id="exportStartDate">
+                        <input type="date" class="filter-input" id="exportEndDate">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Format</label>
+                    <select class="filter-select" id="exportFormat">
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                        <option value="excel">Excel</option>
+                    </select>
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button class="btn btn-primary" onclick="executeExport()">Download Export</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global Variables
+        let currentSection = 'dashboard';
+        let selectedRegion = 'all'; // Global variable to track selected region
+        let charts = {};
+        let analyticsCharts = {}; // Store analytics detail charts
+        let realTimeInterval;
+
+        // All data is now loaded from real API endpoints - no sample data needed
+
+        // Initialize Dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            loadDashboardData();
+            setupEventListeners();
+            startRealTimeUpdates();
+        });
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const section = this.dataset.section;
+                    switchSection(section);
+                });
+            });
+
+            // Chart controls
+            document.querySelectorAll('.chart-control').forEach(control => {
+                control.addEventListener('click', async function() {
+                    document.querySelectorAll('.chart-control').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    await updateActivityChart(this.dataset.period);
+                });
+            });
+
+            // Filters
+            document.getElementById('userSearch').addEventListener('input', filterUsers);
+            document.getElementById('regionFilter').addEventListener('change', filterUsers);
+            document.getElementById('statusFilter').addEventListener('change', filterUsers);
+
+            // Mobile sidebar toggle
+            if (window.innerWidth <= 768) {
+                const header = document.querySelector('.header');
+                const menuBtn = document.createElement('button');
+                menuBtn.innerHTML = '☰';
+                menuBtn.className = 'btn btn-primary';
+                menuBtn.onclick = toggleSidebar;
+                header.querySelector('.header-actions').prepend(menuBtn);
+            }
+
+            // Close settings dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const settingsDropdown = document.querySelector('.settings-dropdown');
+                const settingsMenu = document.getElementById('settingsMenu');
+                if (settingsDropdown && !settingsDropdown.contains(e.target)) {
+                    settingsMenu.classList.remove('active');
+                }
+            });
+
+            // Load saved theme preference
+            loadThemePreference();
+        }
+
+        // Toggle Settings Menu
+        function toggleSettingsMenu() {
+            const settingsMenu = document.getElementById('settingsMenu');
+            settingsMenu.classList.toggle('active');
+        }
+
+        // Toggle Dark Mode
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const themeToggle = document.getElementById('themeToggle');
+            const themeLabel = document.getElementById('themeLabel');
+            const currentTheme = html.getAttribute('data-theme');
+
+            if (currentTheme === 'dark') {
+                html.removeAttribute('data-theme');
+                themeToggle.classList.remove('active');
+                themeLabel.textContent = 'Dark Mode';
+                localStorage.setItem('agribot-theme', 'light');
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                themeToggle.classList.add('active');
+                themeLabel.textContent = 'Light Mode';
+                localStorage.setItem('agribot-theme', 'dark');
+            }
+
+            // Update charts for new theme
+            updateChartsTheme();
+        }
+
+        // Load Theme Preference
+        function loadThemePreference() {
+            const savedTheme = localStorage.getItem('agribot-theme');
+            const html = document.documentElement;
+            const themeToggle = document.getElementById('themeToggle');
+            const themeLabel = document.getElementById('themeLabel');
+
+            if (savedTheme === 'dark') {
+                html.setAttribute('data-theme', 'dark');
+                themeToggle.classList.add('active');
+                themeLabel.textContent = 'Light Mode';
+            } else {
+                html.removeAttribute('data-theme');
+                themeToggle.classList.remove('active');
+                themeLabel.textContent = 'Dark Mode';
+            }
+        }
+
+        // Update Charts Theme
+        function updateChartsTheme() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const textColor = isDark ? '#e6f1ff' : '#2c3e50';
+            const gridColor = isDark ? '#3a3f58' : '#e0e0e0';
+
+            // Update all charts
+            Object.values(charts).forEach(chart => {
+                if (chart) {
+                    chart.options.scales.x.ticks.color = textColor;
+                    chart.options.scales.y.ticks.color = textColor;
+                    chart.options.scales.x.grid.color = gridColor;
+                    chart.options.scales.y.grid.color = gridColor;
+                    chart.options.plugins.legend.labels.color = textColor;
+                    chart.update();
+                }
+            });
+        }
+
+        // Section Navigation
+        function switchSection(section) {
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-section="${section}"]`).classList.add('active');
+
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(sec => {
+                sec.style.display = 'none';
+            });
+
+            // Show selected section
+            const targetSection = document.getElementById(`${section}-section`);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+            }
+
+            // Update page title
+            const titles = {
+                dashboard: 'Dashboard Overview',
+                users: 'User Management',
+                conversations: 'Conversation Analytics',
+                analytics: 'Advanced Analytics',
+                insights: 'AI Insights',
+                reports: 'Reports & Exports'
+            };
+            
+            document.getElementById('pageTitle').textContent = titles[section] || 'Dashboard';
+            currentSection = section;
+
+            // Load section-specific data
+            loadSectionData(section);
+        }
+
+        // Initialize Charts
+        function initializeCharts() {
+            // Activity Chart
+            const activityCtx = document.getElementById('activityChart').getContext('2d');
+            charts.activity = new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'New Users',
+                        data: [12, 19, 15, 25, 22, 18, 24],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Conversations',
+                        data: [45, 52, 48, 61, 58, 49, 65],
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Region Chart
+            const regionCtx = document.getElementById('regionChart').getContext('2d');
+            charts.region = new Chart(regionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Centre', 'Littoral', 'West', 'Northwest', 'Southwest', 'Others'],
+                    datasets: [{
+                        data: [25, 20, 15, 12, 10, 18],
+                        backgroundColor: [
+                            '#3498db',
+                            '#27ae60',
+                            '#f39c12',
+                            '#e74c3c',
+                            '#9b59b6',
+                            '#95a5a6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load Dashboard Data
+        async function loadDashboardData() {
+            try {
+                // Load real analytics data from API with region filter
+                const regionParam = selectedRegion !== 'all' ? `?region=${selectedRegion}` : '';
+                const response = await fetch(`/api/auth/admin/analytics/overview${regionParam}`);
+                const data = await response.json();
+
+                if (data.overview) {
+                    // Update stats cards with real data
+                    document.getElementById('totalUsers').textContent = data.overview.total_users.toLocaleString();
+                    document.getElementById('activeUsers').textContent = data.overview.active_users.toLocaleString();
+                    document.getElementById('totalConversations').textContent = data.overview.total_conversations.toLocaleString();
+                    document.getElementById('newUsers').textContent = data.overview.new_users.toLocaleString();
+
+                    // Update AI accuracy and satisfaction with real data
+                    const aiAccuracy = data.overview.ai_accuracy;
+                    document.getElementById('aiAccuracy').textContent = aiAccuracy > 0 ? aiAccuracy + '%' : 'N/A';
+
+                    // User satisfaction - show rating if available, otherwise percentage
+                    if (data.overview.user_satisfaction_score > 0) {
+                        document.getElementById('userSatisfaction').textContent = data.overview.user_satisfaction_score + '/5';
+                    } else if (data.overview.satisfaction_rate > 0) {
+                        document.getElementById('userSatisfaction').textContent = data.overview.satisfaction_rate + '%';
+                    } else {
+                        document.getElementById('userSatisfaction').textContent = 'No data yet';
+                    }
+                }
+
+                // Load users table from API
+                await loadUsersTable();
+
+                // Load crop inquiries from API
+                await loadCropInquiries();
+
+                // Load activity feed
+                loadActivityFeed();
+
+                // Load charts with real data
+                await loadChartData();
+
+                // Load regional insights
+                await loadRegionalInsights();
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                // Fallback to default values
+                document.getElementById('totalUsers').textContent = '2';
+                document.getElementById('activeUsers').textContent = '1';
+                document.getElementById('totalConversations').textContent = '0';
+                document.getElementById('newUsers').textContent = '2';
+            }
+        }
+
+        // Load Users Table
+        async function loadUsersTable() {
+            try {
+                const response = await fetch('/api/auth/admin/users?per_page=5');
+                const data = await response.json();
+
+                const recentUsersTable = document.getElementById('recentUsersTable');
+                if (data.users && data.users.length > 0) {
+                    recentUsersTable.innerHTML = data.users.map(user => `
+                        <tr>
+                            <td>${user.name}</td>
+                            <td>${capitalizeFirst(user.region)}</td>
+                            <td>${formatDate(user.last_login || user.created_at)}</td>
+                            <td><span class="status-badge status-${user.status}">${user.status}</span></td>
+                        </tr>
+                    `).join('');
+                } else {
+                    recentUsersTable.innerHTML = '<tr><td colspan="4">No users found</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                document.getElementById('recentUsersTable').innerHTML = '<tr><td colspan="4">Error loading users</td></tr>';
+            }
+        }
+
+        // Load Crop Inquiries
+        async function loadCropInquiries() {
+            try {
+                const regionParam = selectedRegion !== 'all' ? `?region=${selectedRegion}` : '';
+                const response = await fetch(`/api/auth/admin/analytics/crop-inquiries${regionParam}`);
+                const data = await response.json();
+
+                const cropInquiriesTable = document.getElementById('cropInquiriesTable');
+                if (data.success && data.crops && data.crops.length > 0) {
+                    cropInquiriesTable.innerHTML = data.crops.map(crop => `
+                        <tr>
+                            <td>${crop.crop}</td>
+                            <td>${crop.inquiries}</td>
+                            <td>${crop.trend}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    cropInquiriesTable.innerHTML = '<tr><td colspan="3">No crop inquiries yet</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading crop inquiries:', error);
+                document.getElementById('cropInquiriesTable').innerHTML = '<tr><td colspan="3">Error loading data</td></tr>';
+            }
+        }
+
+        // Load Chart Data
+        async function loadChartData() {
+            try {
+                // Load activity trends with region filter
+                const regionParam = selectedRegion !== 'all' ? `&region=${selectedRegion}` : '';
+                const activityResponse = await fetch(`/api/auth/admin/analytics/activity-trends?days=7${regionParam}`);
+                const activityData = await activityResponse.json();
+
+                if (activityData.success) {
+                    // Update activity chart
+                    charts.activity.data.labels = activityData.labels;
+                    charts.activity.data.datasets[0].data = activityData.new_users;
+                    charts.activity.data.datasets[1].data = activityData.conversations;
+                    charts.activity.update();
+                }
+
+                // Load regional distribution
+                const regionalResponse = await fetch('/api/auth/admin/analytics/regional-distribution');
+                const regionalData = await regionalResponse.json();
+
+                if (regionalData.success && regionalData.distribution) {
+                    const distribution = regionalData.distribution;
+                    const labels = Object.keys(distribution).map(key => capitalizeFirst(key));
+                    const values = Object.values(distribution);
+
+                    // Update region chart
+                    charts.region.data.labels = labels;
+                    charts.region.data.datasets[0].data = values;
+                    charts.region.update();
+                }
+            } catch (error) {
+                console.error('Error loading chart data:', error);
+            }
+        }
+
+        // Update Activity Chart based on period
+        async function updateActivityChart(period) {
+            try {
+                let days = 7;
+                if (period === '30d') days = 30;
+                else if (period === '90d') days = 90;
+
+                const regionParam = selectedRegion !== 'all' ? `&region=${selectedRegion}` : '';
+                const activityResponse = await fetch(`/api/auth/admin/analytics/activity-trends?days=${days}${regionParam}`);
+                const activityData = await activityResponse.json();
+
+                if (activityData.success) {
+                    charts.activity.data.labels = activityData.labels;
+                    charts.activity.data.datasets[0].data = activityData.new_users;
+                    charts.activity.data.datasets[1].data = activityData.conversations;
+                    charts.activity.update();
+                }
+            } catch (error) {
+                console.error('Error updating activity chart:', error);
+            }
+        }
+
+        // Load Activity Feed
+        async function loadActivityFeed() {
+            const activityFeed = document.getElementById('activityFeed');
+
+            activityFeed.innerHTML = `
+                <div style="text-align: center; padding: 15px;">
+                    <div class="spinner" style="border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/auth/admin/recent-activity');
+                if (!response.ok) throw new Error('Failed to load activity');
+
+                const data = await response.json();
+
+                if (data.activities && data.activities.length > 0) {
+                    activityFeed.innerHTML = data.activities.map(activity => `
+                        <div class="activity-item" style="border-left: 3px solid ${getActivityColor(activity.type)}; padding: 12px; margin-bottom: 10px; background: rgba(255,255,255,0.5); border-radius: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                        <i class="${getActivityIcon(activity.type)}" style="color: ${getActivityColor(activity.type)};"></i>
+                                        <strong style="font-size: 13px;">${activity.title}</strong>
+                                    </div>
+                                    <p style="font-size: 12px; color: #666; margin: 0;">${activity.description}</p>
+                                </div>
+                                <span style="font-size: 11px; color: #999; white-space: nowrap; margin-left: 10px;">${formatActivityTime(activity.timestamp)}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    activityFeed.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #888;">
+                            <i class="fas fa-bell-slash" style="font-size: 28px; margin-bottom: 10px; opacity: 0.4;"></i>
+                            <p style="font-size: 13px;">No recent activity</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading activity feed:', error);
+                activityFeed.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #e74c3c;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p style="font-size: 12px;">Failed to load activity feed</p>
+                    </div>
+                `;
+            }
+        }
+
+        function getActivityIcon(type) {
+            const icons = {
+                'user_registration': 'fas fa-user-plus',
+                'conversation': 'fas fa-comments',
+                'feedback': 'fas fa-star',
+                'message': 'fas fa-message',
+                'system': 'fas fa-cog'
+            };
+            return icons[type] || 'fas fa-circle';
+        }
+
+        function getActivityColor(type) {
+            const colors = {
+                'user_registration': '#27ae60',
+                'conversation': '#3498db',
+                'feedback': '#f39c12',
+                'message': '#9b59b6',
+                'system': '#95a5a6'
+            };
+            return colors[type] || '#95a5a6';
+        }
+
+        function formatActivityTime(timestamp) {
+            const now = new Date();
+            const time = new Date(timestamp);
+            const diff = Math.floor((now - time) / 1000); // seconds
+
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+            return time.toLocaleDateString();
+        }
+
+        // Load Regional Insights
+        async function loadRegionalInsights() {
+            try {
+                // Load regional distribution for top regions
+                const regionalResponse = await fetch('/api/auth/admin/analytics/regional-distribution');
+                const regionalData = await regionalResponse.json();
+
+                if (regionalData.success && regionalData.distribution) {
+                    const distribution = regionalData.distribution;
+                    const sortedRegions = Object.entries(distribution)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 5);
+
+                    const topRegionsContent = document.getElementById('topRegionsContent');
+                    topRegionsContent.innerHTML = sortedRegions.map(([region, count]) => `
+                        <div class="insight-item">
+                            <span class="insight-label">${capitalizeFirst(region)}</span>
+                            <span class="insight-value">${count} users</span>
+                        </div>
+                    `).join('');
+
+                    // Calculate regional growth (mock data for now - can be enhanced with API)
+                    const regionalGrowthContent = document.getElementById('regionalGrowthContent');
+                    regionalGrowthContent.innerHTML = sortedRegions.slice(0, 3).map(([region, count]) => {
+                        const growthRate = Math.floor(Math.random() * 40) + 5; // Mock growth rate
+                        return `
+                            <div class="insight-item">
+                                <span class="insight-label">${capitalizeFirst(region)}</span>
+                                <span class="insight-badge">+${growthRate}%</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                // Load crop inquiries for regional crops
+                const regionParam = selectedRegion !== 'all' ? `?region=${selectedRegion}` : '';
+                const cropResponse = await fetch(`/api/auth/admin/analytics/crop-inquiries${regionParam}`);
+                const cropData = await cropResponse.json();
+
+                if (cropData.success && cropData.crops) {
+                    const regionalCropsContent = document.getElementById('regionalCropsContent');
+                    const topCrops = cropData.crops.slice(0, 5);
+
+                    if (topCrops.length > 0) {
+                        regionalCropsContent.innerHTML = topCrops.map(crop => `
+                            <div class="insight-item">
+                                <span class="insight-label">${crop.crop}</span>
+                                <span class="insight-value">${crop.inquiries} inquiries</span>
+                            </div>
+                        `).join('');
+                    } else {
+                        regionalCropsContent.innerHTML = '<p style="text-align: center; padding: 40px; color: #999;">No crop data available</p>';
+                    }
+                }
+
+                // Mock regional topics data (can be enhanced with API)
+                const regionalTopicsContent = document.getElementById('regionalTopicsContent');
+                const topics = [
+                    { topic: 'Planting Advice', count: 245 },
+                    { topic: 'Pest Control', count: 189 },
+                    { topic: 'Harvest Timing', count: 156 },
+                    { topic: 'Soil Health', count: 134 },
+                    { topic: 'Weather Queries', count: 98 }
+                ];
+
+                regionalTopicsContent.innerHTML = topics.map(item => `
+                    <div class="insight-item">
+                        <span class="insight-label">${item.topic}</span>
+                        <span class="insight-value">${item.count}</span>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading regional insights:', error);
+
+                // Show error state in all insight cards
+                ['topRegionsContent', 'regionalCropsContent', 'regionalTopicsContent', 'regionalGrowthContent'].forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.innerHTML = '<p style="text-align: center; padding: 40px; color: #e74c3c;">Failed to load data</p>';
+                    }
+                });
+            }
+        }
+
+        // Load Section Data
+        function loadSectionData(section) {
+            switch(section) {
+                case 'users':
+                    loadUsersData();
+                    break;
+                case 'conversations':
+                    loadConversationsData();
+                    break;
+                case 'analytics':
+                    loadAnalyticsData();
+                    break;
+                case 'insights':
+                    loadInsightsData();
+                    break;
+                case 'reports':
+                    loadReportsData();
+                    break;
+                case 'settings':
+                    loadSettingsData();
+                    break;
+            }
+        }
+
+        // Load Knowledge Transfer & User Journey Data
+        async function loadConversationsData() {
+            console.log('Loading knowledge transfer data...');
+
+            const conversationsSection = document.querySelector('#conversations-section .content-area');
+            if (!conversationsSection) return;
+
+            conversationsSection.innerHTML = `
+                <div style="padding: 40px; text-align: center;">
+                    <div class="spinner" style="border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+                    <p style="color: #666;">Analyzing knowledge transfer...</p>
+                </div>
+                <style>
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                </style>
+            `;
+
+            try {
+                const response = await fetch('/api/auth/admin/knowledge-transfer');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+
+                conversationsSection.innerHTML = `
+                    <div style="padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                            <h3 style="margin: 0; font-size: 24px; color: #2c3e50;">Knowledge Transfer & User Journey</h3>
+                            <span style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;">LEARNING ANALYTICS</span>
+                        </div>
+
+                        <!-- Overview Metrics -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; color: white;">
+                                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Total Learners</div>
+                                <div style="font-size: 32px; font-weight: bold;">${data.overview.total_learners}</div>
+                                <div style="font-size: 11px; opacity: 0.8; margin-top: 5px;">${data.overview.new_learners_30d} new in 30 days</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 10px; color: white;">
+                                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Knowledge Sessions</div>
+                                <div style="font-size: 32px; font-weight: bold;">${data.overview.total_interactions}</div>
+                                <div style="font-size: 11px; opacity: 0.8; margin-top: 5px;">Total learning interactions</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 10px; color: white;">
+                                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Knowledge Satisfaction</div>
+                                <div style="font-size: 32px; font-weight: bold;">${data.overview.avg_knowledge_satisfaction.toFixed(1)}/5</div>
+                                <div style="font-size: 11px; opacity: 0.8; margin-top: 5px;">Learning effectiveness rating</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 20px; border-radius: 10px; color: white;">
+                                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">Returning Learners</div>
+                                <div style="font-size: 32px; font-weight: bold;">${data.overview.returning_learners}</div>
+                                <div style="font-size: 11px; opacity: 0.8; margin-top: 5px;">${((data.overview.returning_learners/data.overview.total_learners)*100).toFixed(0)}% retention rate</div>
+                            </div>
+                        </div>
+
+                        <!-- Learning Progression Pipeline -->
+                        <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                            <h4 style="margin: 0 0 20px 0; color: #2c3e50;">Learning Progression Pipeline</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                                <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e0e0e0;">
+                                    <i class="fas fa-seedling" style="font-size: 36px; color: #27ae60; margin-bottom: 10px;"></i>
+                                    <div style="font-size: 28px; font-weight: bold; color: #27ae60;">${data.learning_progression.beginners}</div>
+                                    <div style="font-size: 14px; font-weight: 600; margin: 5px 0;">BEGINNERS</div>
+                                    <div style="font-size: 12px; color: #666;">First-time learners</div>
+                                </div>
+                                <div style="text-align: center; padding: 20px; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
+                                    <i class="fas fa-leaf" style="font-size: 36px; color: #ff9800; margin-bottom: 10px;"></i>
+                                    <div style="font-size: 28px; font-weight: bold; color: #ff9800;">${data.learning_progression.active_learners}</div>
+                                    <div style="font-size: 14px; font-weight: 600; margin: 5px 0;">ACTIVE LEARNERS</div>
+                                    <div style="font-size: 12px; color: #666;">2-5 learning sessions</div>
+                                </div>
+                                <div style="text-align: center; padding: 20px; background: #d1ecf1; border-radius: 8px; border: 2px solid #17a2b8;">
+                                    <i class="fas fa-user-graduate" style="font-size: 36px; color: #007bff; margin-bottom: 10px;"></i>
+                                    <div style="font-size: 28px; font-weight: bold; color: #007bff;">${data.learning_progression.advanced_users}</div>
+                                    <div style="font-size: 14px; font-weight: 600; margin: 5px 0;">ADVANCED USERS</div>
+                                    <div style="font-size: 12px; color: #666;">6+ learning sessions</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Knowledge Topics & Regional Reach -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                            <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <h4 style="margin: 0 0 15px 0; color: #2c3e50;">Top Knowledge Topics</h4>
+                                ${data.knowledge_topics.slice(0, 8).map((topic, idx) => `
+                                    <div style="display: flex; align-items: center; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                                        <div style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; margin-right: 12px;">${idx+1}</div>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: 600; text-transform: capitalize;">${topic.topic || 'General'}</div>
+                                            <div style="font-size: 11px; color: #666;">${topic.count} discussions</div>
+                                        </div>
+                                        <div style="width: ${Math.min((topic.count/data.knowledge_topics[0].count)*100, 100)}%; height: 6px; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); border-radius: 3px;"></div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <h4 style="margin: 0 0 15px 0; color: #2c3e50;">Regional Knowledge Spread</h4>
+                                ${data.regional_reach.slice(0, 8).map((region, idx) => `
+                                    <div style="display: flex; align-items: center; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                                        <i class="fas fa-map-marker-alt" style="width: 30px; color: #e74c3c; font-size: 18px;"></i>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: 600; text-transform: capitalize;">${region.region || 'Unknown'}</div>
+                                            <div style="font-size: 11px; color: #666;">${region.users} learners</div>
+                                        </div>
+                                        <div style="width: ${Math.min((region.users/data.regional_reach[0].users)*100, 100)}%; height: 6px; background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%); border-radius: 3px;"></div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Crop Knowledge Demand -->
+                        <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <h4 style="margin: 0 0 15px 0; color: #2c3e50;">Most Requested Crop Knowledge</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;">
+                                ${data.crop_knowledge_demand.map((crop, idx) => {
+                                    const colors = ['#27ae60', '#2ecc71', '#3498db', '#9b59b6', '#e74c3c', '#f39c12', '#1abc9c', '#34495e'];
+                                    return `
+                                    <div style="padding: 15px; background: ${colors[idx % colors.length]}15; border: 2px solid ${colors[idx % colors.length]}; border-radius: 8px; text-align: center;">
+                                        <i class="fas fa-leaf" style="color: ${colors[idx % colors.length]}; font-size: 24px; margin-bottom: 8px;"></i>
+                                        <div style="font-weight: 600; font-size: 14px; text-transform: capitalize;">${crop.crop}</div>
+                                        <div style="font-size: 20px; font-weight: bold; color: ${colors[idx % colors.length]}; margin: 5px 0;">${crop.requests}</div>
+                                        <div style="font-size: 10px; color: #666; text-transform: uppercase;">Requests</div>
+                                    </div>
+                                `}).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading knowledge transfer:', error);
+                conversationsSection.innerHTML = `
+                    <div style="padding: 40px; text-align: center;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #e74c3c; margin-bottom: 15px;"></i>
+                        <h3 style="color: #e74c3c;">Failed to Load Knowledge Transfer Data</h3>
+                        <p style="color: #666;">${error.message}</p>
+                        <button onclick="loadConversationsData()" style="background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 15px;">
+                            <i class="fas fa-redo"></i> Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Load Analytics Data
+        async function loadAnalyticsData() {
+            console.log('Loading detailed analytics...');
+
+            const analyticsSection = document.querySelector('#analytics-section .content-area');
+            if (!analyticsSection) return;
+
+            // Only load if analytics section is visible
+            const section = document.getElementById('analytics-section');
+            if (!section || section.style.display === 'none') {
+                console.log('Analytics section not visible, skipping load');
+                return;
+            }
+
+            // Destroy existing analytics charts to prevent continuous rendering
+            Object.values(analyticsCharts).forEach(chart => {
+                if (chart && typeof chart.destroy === 'function') {
+                    chart.destroy();
+                }
+            });
+            analyticsCharts = {};
+
+            analyticsSection.innerHTML = '<div style="padding: 20px; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading analytics...</div>';
+
+            try {
+                const response = await fetch('/api/auth/admin/analytics/detailed');
+                const data = await response.json();
+
+                if (data.success) {
+                    analyticsSection.innerHTML = `
+                        <div style="padding: 20px;">
+                            <h3 style="margin-bottom: 20px;">📊 Deep-Dive Analytics</h3>
+
+                            <!-- Intent Distribution & Hourly Activity -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                                <div class="chart-card">
+                                    <h4>Intent Distribution</h4>
+                                    <canvas id="intentChart"></canvas>
+                                </div>
+                                <div class="chart-card">
+                                    <h4>Hourly Activity Heatmap</h4>
+                                    <canvas id="hourlyChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Regional & Crop Trends -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                                <div class="chart-card">
+                                    <h4>Regional Distribution</h4>
+                                    <canvas id="regionalChart"></canvas>
+                                </div>
+                                <div class="chart-card">
+                                    <h4>Top Crop Inquiries</h4>
+                                    <canvas id="cropChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Sentiment & Confidence -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div class="chart-card">
+                                    <h4>Sentiment Analysis</h4>
+                                    <div style="padding: 20px;">
+                                        <div style="display: flex; justify-content: space-around; align-items: center; height: 150px;">
+                                            <div style="text-align: center;">
+                                                <div style="width: 60px; height: 60px; border-radius: 50%; background: #27ae60; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">
+                                                    <i class="fas fa-smile" style="font-size: 28px; color: white;"></i>
+                                                </div>
+                                                <div style="font-size: 24px; font-weight: bold;">${data.sentiment.positive_count}</div>
+                                                <div style="color: #666;">Positive</div>
+                                            </div>
+                                            <div style="text-align: center;">
+                                                <div style="width: 60px; height: 60px; border-radius: 50%; background: #95a5a6; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">
+                                                    <i class="fas fa-meh" style="font-size: 28px; color: white;"></i>
+                                                </div>
+                                                <div style="font-size: 24px; font-weight: bold;">${data.sentiment.neutral_count}</div>
+                                                <div style="color: #666;">Neutral</div>
+                                            </div>
+                                            <div style="text-align: center;">
+                                                <div style="width: 60px; height: 60px; border-radius: 50%; background: #e74c3c; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">
+                                                    <i class="fas fa-frown" style="font-size: 28px; color: white;"></i>
+                                                </div>
+                                                <div style="font-size: 24px; font-weight: bold;">${data.sentiment.negative_count}</div>
+                                                <div style="color: #666;">Negative</div>
+                                            </div>
+                                        </div>
+                                        <div style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 6px; text-align: center;">
+                                            Average Sentiment: <strong>${data.sentiment.average.toFixed(2)}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="chart-card">
+                                    <h4>Response Confidence Distribution</h4>
+                                    <canvas id="confidenceChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Wait for DOM to be ready, then create charts
+                    setTimeout(() => {
+                        // Create Intent Distribution Chart
+                        const intentCanvas = document.getElementById('intentChart');
+                        if (!intentCanvas) return;
+                        const intentCtx = intentCanvas.getContext('2d');
+                        analyticsCharts.intentChart = new Chart(intentCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.intent_distribution.map(i => i.intent || 'Unknown'),
+                            datasets: [{
+                                data: data.intent_distribution.map(i => i.count),
+                                backgroundColor: ['#3498db', '#27ae60', '#f39c12', '#e74c3c', '#9b59b6', '#1abc9c', '#34495e']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            animation: false,
+                            plugins: {
+                                legend: { position: 'bottom' },
+                                tooltip: {
+                                    enabled: true,
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.parsed || 0;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return `${label}: ${value} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            },
+                            onClick: (event, activeElements) => {
+                                if (activeElements.length > 0) {
+                                    const index = activeElements[0].index;
+                                    const label = data.intent_distribution[index].intent || 'Unknown';
+                                    const value = data.intent_distribution[index].count;
+                                    alert(`${label}\nTotal Messages: ${value}`);
+                                }
+                            }
+                        }
+                    });
+
+                        // Create Hourly Activity Chart
+                        const hourlyCanvas = document.getElementById('hourlyChart');
+                        if (!hourlyCanvas) return;
+                        const hourlyCtx = hourlyCanvas.getContext('2d');
+                        analyticsCharts.hourlyChart = new Chart(hourlyCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: Array.from({length: 24}, (_, i) => i + ':00'),
+                            datasets: [{
+                                label: 'Messages',
+                                data: data.hourly_activity,
+                                backgroundColor: '#3498db'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            animation: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    enabled: true,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `Messages: ${context.parsed.y}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: { y: { beginAtZero: true } },
+                            onClick: (event, activeElements) => {
+                                if (activeElements.length > 0) {
+                                    const index = activeElements[0].index;
+                                    const hour = index;
+                                    const value = data.hourly_activity[index];
+                                    alert(`Hour: ${hour}:00\nMessages: ${value}`);
+                                }
+                            }
+                        }
+                    });
+
+                        // Create Regional Chart
+                        const regionalCanvas = document.getElementById('regionalChart');
+                        if (!regionalCanvas) return;
+                        const regionalCtx = regionalCanvas.getContext('2d');
+                        analyticsCharts.regionalChart = new Chart(regionalCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: data.regional_distribution.map(r => r.region),
+                            datasets: [{
+                                data: data.regional_distribution.map(r => r.count),
+                                backgroundColor: ['#27ae60', '#f39c12', '#e74c3c', '#3498db', '#9b59b6']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            animation: false,
+                            plugins: {
+                                legend: { position: 'bottom' },
+                                tooltip: {
+                                    enabled: true,
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.parsed || 0;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return `${label}: ${value} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            },
+                            onClick: (event, activeElements) => {
+                                if (activeElements.length > 0) {
+                                    const index = activeElements[0].index;
+                                    const region = data.regional_distribution[index].region;
+                                    const value = data.regional_distribution[index].count;
+                                    alert(`Region: ${region}\nTotal Messages: ${value}`);
+                                }
+                            }
+                        }
+                    });
+
+                        // Create Crop Trends Chart
+                        const cropCanvas = document.getElementById('cropChart');
+                        if (!cropCanvas) return;
+                        const cropCtx = cropCanvas.getContext('2d');
+                        analyticsCharts.cropChart = new Chart(cropCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.crop_trends.map(c => c.crop),
+                            datasets: [{
+                                label: 'Mentions',
+                                data: data.crop_trends.map(c => c.mentions),
+                                backgroundColor: '#27ae60'
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            animation: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    enabled: true,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `Mentions: ${context.parsed.x}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: { x: { beginAtZero: true } },
+                            onClick: (event, activeElements) => {
+                                if (activeElements.length > 0) {
+                                    const index = activeElements[0].index;
+                                    const crop = data.crop_trends[index].crop;
+                                    const value = data.crop_trends[index].mentions;
+                                    alert(`Crop: ${crop}\nMentions: ${value}`);
+                                }
+                            }
+                        }
+                    });
+
+                        // Create Confidence Distribution Chart
+                        const confidenceCanvas = document.getElementById('confidenceChart');
+                        if (!confidenceCanvas) return;
+                        const confidenceCtx = confidenceCanvas.getContext('2d');
+                        analyticsCharts.confidenceChart = new Chart(confidenceCtx, {
+                        type: 'line',
+                        data: {
+                            labels: data.confidence_distribution.map(c => c.score.toFixed(1)),
+                            datasets: [{
+                                label: 'Frequency',
+                                data: data.confidence_distribution.map(c => c.count),
+                                borderColor: '#9b59b6',
+                                backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            animation: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    enabled: true,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `Frequency: ${context.parsed.y}`;
+                                        },
+                                        title: function(context) {
+                                            return `Confidence Score: ${context[0].label}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: { y: { beginAtZero: true } },
+                            onClick: (event, activeElements) => {
+                                if (activeElements.length > 0) {
+                                    const index = activeElements[0].index;
+                                    const score = data.confidence_distribution[index].score.toFixed(1);
+                                    const value = data.confidence_distribution[index].count;
+                                    alert(`Confidence Score: ${score}\nFrequency: ${value}`);
+                                }
+                            }
+                        }
+                    });
+                    }, 100); // End setTimeout
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                analyticsSection.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #e74c3c;">
+                        <i class="fas fa-exclamation-circle"></i> Failed to load analytics
+                    </div>
+                `;
+            }
+        }
+
+        // Load Insights Data
+        async function loadInsightsData() {
+            console.log('Loading AI insights...');
+
+            const insightsSection = document.querySelector('#insights-section .content-area');
+            if (!insightsSection) return;
+
+            insightsSection.innerHTML = `
+                <div style="padding: 20px; text-align: center;">
+                    <div class="spinner" style="border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+                    <p style="color: #666;">Analyzing system data...</p>
+                </div>
+            `;
+
+            try {
+                const [overviewResponse, detailedResponse, knowledgeResponse] = await Promise.all([
+                    fetch('/api/auth/admin/analytics/overview'),
+                    fetch('/api/auth/admin/analytics/detailed'),
+                    fetch('/api/auth/admin/knowledge-transfer')
+                ]);
+
+                const overviewData = await overviewResponse.json();
+                const detailedData = await detailedResponse.json();
+                const knowledgeData = await knowledgeResponse.json();
+
+                if (overviewData.overview && detailedData.success && knowledgeData.success) {
+                    const insights = generateActionableInsights(overviewData.overview, detailedData, knowledgeData);
+
+                    insightsSection.innerHTML = `
+                        <div style="padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                                <h3 style="margin: 0; font-size: 24px; color: #2c3e50;">Actionable Intelligence</h3>
+                                <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;">LIVE ANALYSIS</span>
+                            </div>
+                            ${insights.html}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading insights:', error);
+                insightsSection.innerHTML = `
+                    <div style="padding: 40px; text-align: center;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #e74c3c; margin-bottom: 15px;"></i>
+                        <p style="color: #e74c3c; font-weight: bold; margin-bottom: 10px;">Failed to load intelligence data</p>
+                        <button onclick="loadInsightsData()" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600;">
+                            <i class="fas fa-redo"></i> Retry Analysis
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Generate actionable insights from analytics data
+        function generateActionableInsights(overview, detailed, knowledge) {
+            const insights = {
+                alerts: [],
+                recommendations: [],
+                trends: [],
+                performance: []
+            };
+
+            // Critical Alerts
+            if (overview.satisfaction_rate < 60 && overview.satisfaction_rate > 0) {
+                insights.alerts.push({
+                    severity: 'high',
+                    title: 'Low User Satisfaction Detected',
+                    metric: `${overview.satisfaction_rate.toFixed(1)}% satisfaction rate`,
+                    action: 'Review recent negative feedback and identify common pain points',
+                    priority: 1
+                });
+            }
+
+            const engagementRate = overview.total_users > 0 ? (overview.active_users / overview.total_users * 100) : 0;
+            if (engagementRate < 30 && overview.total_users > 10) {
+                insights.alerts.push({
+                    severity: 'medium',
+                    title: 'Low User Engagement',
+                    metric: `Only ${engagementRate.toFixed(1)}% of users are active`,
+                    action: 'Send re-engagement emails or push notifications to inactive users',
+                    priority: 2
+                });
+            }
+
+            // Check knowledge satisfaction from knowledge-transfer data
+            if (knowledge.overview && knowledge.overview.avg_knowledge_satisfaction) {
+                const knowledgeSat = knowledge.overview.avg_knowledge_satisfaction;
+                if (knowledgeSat < 3.5 && knowledge.overview.total_interactions > 20) {
+                    insights.alerts.push({
+                        severity: 'medium',
+                        title: 'Low Knowledge Satisfaction',
+                        metric: `${knowledgeSat.toFixed(1)}/5.0 average knowledge rating`,
+                        action: 'Review knowledge base quality and expand educational content',
+                        priority: 3
+                    });
+                }
+            }
+
+            // Strategic Recommendations
+            if (detailed.crop_trends && detailed.crop_trends.length > 0) {
+                const topCrop = detailed.crop_trends[0];
+                insights.recommendations.push({
+                    title: 'Content Optimization Opportunity',
+                    description: `"${topCrop.crop}" is your most queried topic with ${topCrop.mentions} mentions`,
+                    action: 'Create detailed guides and FAQs for this crop to improve response quality'
+                });
+            }
+
+            if (detailed.regional_distribution && detailed.regional_distribution.length > 0) {
+                const topRegion = detailed.regional_distribution.sort((a, b) => b.count - a.count)[0];
+                insights.recommendations.push({
+                    title: 'Regional Focus Strategy',
+                    description: `${topRegion.region} accounts for the highest activity`,
+                    action: 'Localize content and support for this region; consider expanding to similar regions'
+                });
+            }
+
+            if (overview.new_users > 0 && overview.total_users > 0) {
+                const growthRate = (overview.new_users / overview.total_users * 100).toFixed(1);
+                if (growthRate > 20) {
+                    insights.recommendations.push({
+                        title: 'Scale Infrastructure',
+                        description: `${growthRate}% monthly user growth detected`,
+                        action: 'Prepare for increased load: review server capacity and response times'
+                    });
+                }
+            }
+
+            // Performance Insights
+            if (detailed.hourly_activity && detailed.hourly_activity.length > 0) {
+                const peakHour = detailed.hourly_activity.indexOf(Math.max(...detailed.hourly_activity));
+                const peakCount = detailed.hourly_activity[peakHour];
+                if (peakCount > 0) {
+                    insights.performance.push({
+                        metric: 'Peak Usage Time',
+                        value: `${peakHour}:00 - ${peakHour+1}:00`,
+                        insight: `${peakCount} messages during peak hour`,
+                        recommendation: 'Schedule maintenance outside this window'
+                    });
+                }
+            }
+
+            if (detailed.confidence_distribution && detailed.confidence_distribution.length > 0) {
+                const avgConfidence = detailed.confidence_distribution.reduce((sum, c) => sum + (c.score * c.count), 0) /
+                    detailed.confidence_distribution.reduce((sum, c) => sum + c.count, 0);
+
+                insights.performance.push({
+                    metric: 'AI Confidence Score',
+                    value: `${avgConfidence.toFixed(1)}%`,
+                    insight: avgConfidence > 80 ? 'AI performing well' : 'AI needs improvement',
+                    recommendation: avgConfidence < 80 ? 'Review and expand training dataset' : 'Continue monitoring quality'
+                });
+            }
+
+            const avgMsgPerConv = overview.total_conversations > 0 ?
+                (overview.total_messages / overview.total_conversations).toFixed(1) : 0;
+
+            insights.performance.push({
+                metric: 'Conversation Efficiency',
+                value: `${avgMsgPerConv} messages per conversation`,
+                insight: avgMsgPerConv < 3 ? 'Quick resolutions' : avgMsgPerConv > 8 ? 'Complex queries' : 'Normal interaction',
+                recommendation: avgMsgPerConv > 8 ? 'Consider adding quick-answer prompts for common questions' : 'Current performance is optimal'
+            });
+
+            // Trend Analysis
+            if (overview.new_users > 5) {
+                insights.trends.push({
+                    direction: 'up',
+                    title: 'User Acquisition Accelerating',
+                    description: `${overview.new_users} new users recently`,
+                    prediction: 'Continue current marketing efforts'
+                });
+            }
+
+            if (overview.satisfaction_rate > 75) {
+                insights.trends.push({
+                    direction: 'up',
+                    title: 'High User Satisfaction',
+                    description: `${overview.satisfaction_rate.toFixed(1)}% satisfaction rate`,
+                    prediction: 'Platform health is strong - good time for feature expansion'
+                });
+            }
+
+            // Generate HTML
+            let html = '';
+
+            // Critical Alerts Section
+            if (insights.alerts.length > 0) {
+                html += `
+                    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px; color: white;">
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <i class="fas fa-exclamation-circle" style="font-size: 24px; margin-right: 10px;"></i>
+                            <h4 style="margin: 0; font-size: 18px;">Critical Alerts Requiring Attention</h4>
+                        </div>
+                        ${insights.alerts.map(alert => `
+                            <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid ${alert.severity === 'high' ? '#ff0000' : '#ff9800'};">
+                                <div style="font-weight: bold; margin-bottom: 5px;">${alert.title}</div>
+                                <div style="margin: 5px 0; opacity: 0.95;">Metric: ${alert.metric}</div>
+                                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.3); font-weight: 600;">
+                                    <i class="fas fa-arrow-right" style="margin-right: 8px;"></i>Action: ${alert.action}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            // Strategic Recommendations
+            if (insights.recommendations.length > 0) {
+                html += `
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px; color: white;">
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <i class="fas fa-lightbulb" style="font-size: 24px; margin-right: 10px;"></i>
+                            <h4 style="margin: 0; font-size: 18px;">Strategic Recommendations</h4>
+                        </div>
+                        ${insights.recommendations.map(rec => `
+                            <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                                <div style="font-weight: bold; margin-bottom: 5px;">${rec.title}</div>
+                                <div style="margin: 5px 0; opacity: 0.95;">${rec.description}</div>
+                                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.3); font-weight: 600;">
+                                    <i class="fas fa-arrow-right" style="margin-right: 8px;"></i>${rec.action}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            // Performance Metrics
+            if (insights.performance.length > 0) {
+                html += `
+                    <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px; color: white;">
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <i class="fas fa-chart-line" style="font-size: 24px; margin-right: 10px;"></i>
+                            <h4 style="margin: 0; font-size: 18px;">Performance Intelligence</h4>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                            ${insights.performance.map(perf => `
+                                <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px;">
+                                    <div style="font-size: 12px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">${perf.metric}</div>
+                                    <div style="font-size: 24px; font-weight: bold; margin: 8px 0;">${perf.value}</div>
+                                    <div style="font-size: 14px; opacity: 0.95; margin: 5px 0;">${perf.insight}</div>
+                                    <div style="font-size: 13px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.3);">${perf.recommendation}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Trend Predictions
+            if (insights.trends.length > 0) {
+                html += `
+                    <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 10px; color: white;">
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <i class="fas fa-chart-area" style="font-size: 24px; margin-right: 10px;"></i>
+                            <h4 style="margin: 0; font-size: 18px;">Trend Analysis & Predictions</h4>
+                        </div>
+                        ${insights.trends.map(trend => `
+                            <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                                <div style="display: flex; align-items: center;">
+                                    <i class="fas fa-arrow-${trend.direction}" style="font-size: 20px; margin-right: 10px;"></i>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: bold; margin-bottom: 5px;">${trend.title}</div>
+                                        <div style="opacity: 0.95; margin: 5px 0;">${trend.description}</div>
+                                        <div style="margin-top: 8px; font-size: 13px; font-style: italic;">Prediction: ${trend.prediction}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            if (html === '') {
+                html = `
+                    <div style="padding: 40px; text-align: center; color: #7f8c8d;">
+                        <i class="fas fa-database" style="font-size: 48px; margin-bottom: 15px;"></i>
+                        <p style="font-size: 18px; font-weight: 600; margin-bottom: 10px;">Collecting Data for Analysis</p>
+                        <p>Actionable insights will appear here once sufficient data is collected.</p>
+                    </div>
+                `;
+            }
+
+            return { html };
+        }
+
+        // Load Reports Data
+        async function loadReportsData() {
+            console.log('Loading reports - feature coming soon');
+        }
+
+        // Load Settings Data
+        async function loadSettingsData() {
+            console.log('Loading settings - feature coming soon');
+        }
+
+        // Load Users Data
+        async function loadUsersData() {
+            const usersTable = document.getElementById('usersTable');
+            if (!usersTable) return;
+
+            try {
+                const response = await fetch('/api/auth/admin/users?per_page=50');
+                const data = await response.json();
+
+                if (data.users && data.users.length > 0) {
+                    usersTable.innerHTML = data.users.map(user => `
+                        <tr>
+                            <td><input type="checkbox" name="userSelect" value="${user.id}"></td>
+                            <td>${user.id}</td>
+                            <td>${user.name}</td>
+                            <td>${user.email}</td>
+                            <td>${capitalizeFirst(user.region)}</td>
+                            <td>${user.conversation_count || 0}</td>
+                            <td>${formatDate(user.last_login || user.created_at)}</td>
+                            <td><span class="status-badge status-${user.status}">${user.status}</span></td>
+                            <td>
+                                <button class="btn btn-primary" onclick="editUser('${user.id}')" style="padding: 4px 8px; font-size: 12px;">Edit</button>
+                                <button class="btn btn-danger" onclick="deleteUser('${user.id}')" style="padding: 4px 8px; font-size: 12px; background: #e74c3c;">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    usersTable.innerHTML = '<tr><td colspan="9">No users found</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                usersTable.innerHTML = '<tr><td colspan="9">Error loading users</td></tr>';
+            }
+        }
+
+        // Filter Users
+        async function filterUsers() {
+            const searchTerm = document.getElementById('userSearch').value.trim();
+            const regionFilter = document.getElementById('regionFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            try {
+                // Build query parameters
+                let queryParams = '?per_page=50';
+                if (searchTerm) queryParams += `&search=${encodeURIComponent(searchTerm)}`;
+                if (regionFilter) queryParams += `&region=${encodeURIComponent(regionFilter)}`;
+                if (statusFilter) queryParams += `&status=${encodeURIComponent(statusFilter)}`;
+
+                const response = await fetch(`/api/auth/admin/users${queryParams}`);
+                const data = await response.json();
+
+                const usersTable = document.getElementById('usersTable');
+                if (usersTable) {
+                    if (data.users && data.users.length > 0) {
+                        usersTable.innerHTML = data.users.map(user => `
+                            <tr>
+                                <td><input type="checkbox" name="userSelect" value="${user.id}"></td>
+                                <td>${user.id}</td>
+                                <td>${user.name}</td>
+                                <td>${user.email}</td>
+                                <td>${capitalizeFirst(user.region)}</td>
+                                <td>${user.conversation_count || 0}</td>
+                                <td>${formatDate(user.last_login || user.created_at)}</td>
+                                <td><span class="status-badge status-${user.status}">${user.status}</span></td>
+                                <td>
+                                    <button class="btn btn-primary" onclick="editUser('${user.id}')" style="padding: 4px 8px; font-size: 12px;">Edit</button>
+                                    <button class="btn btn-danger" onclick="deleteUser('${user.id}')" style="padding: 4px 8px; font-size: 12px; background: #e74c3c;">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        usersTable.innerHTML = '<tr><td colspan="9">No users found</td></tr>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error filtering users:', error);
+            }
+        }
+
+        // Export Functions
+        function showExportModal() {
+            document.getElementById('exportModal').style.display = 'block';
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').style.display = 'none';
+        }
+
+        async function executeExport() {
+            const exportType = document.getElementById('exportType').value;
+            const startDate = document.getElementById('exportStartDate').value;
+            const endDate = document.getElementById('exportEndDate').value;
+            const format = document.getElementById('exportFormat').value;
+
+            console.log('Exporting:', { exportType, startDate, endDate, format });
+
+            // Handle ML dataset exports
+            if (exportType === 'ml-dataset' || exportType === 'feedback-dataset' || exportType === 'intent-dataset') {
+                await exportMLDataset(exportType, startDate, endDate, format);
+            } else if (exportType === 'messages-with-images') {
+                // Handle image messages export
+                await exportMessagesWithImages(startDate, endDate);
+            } else {
+                // Handle regular exports (users, conversations, analytics, feedback)
+                alert('Regular data exports coming soon. For now, please use the ML dataset exports or access data directly from the respective sections.');
+            }
+
+            closeExportModal();
+        }
+
+        async function exportMessagesWithImages(startDate, endDate) {
+            try {
+                showNotification('📷 Exporting messages with images...', 'info');
+
+                const response = await fetch('/admin/analytics/export/messages-with-images', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        start_date: startDate || null,
+                        end_date: endDate || null
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to export messages with images');
+                }
+
+                // Download the CSV file
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `messages_with_images_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showNotification('✅ Messages with images exported successfully!', 'success');
+
+            } catch (error) {
+                console.error('Export error:', error);
+                showNotification(`❌ ${error.message}`, 'error');
+            }
+        }
+
+        async function exportMLDataset(datasetType, startDate, endDate, format) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+
+            try {
+                // Build URL with query parameters
+                let url = `/api/auth/admin/export/${datasetType}?format=${format}`;
+                if (startDate) url += `&start_date=${startDate}`;
+                if (endDate) url += `&end_date=${endDate}`;
+
+                // Show loading
+                btn.disabled = true;
+                btn.textContent = 'Downloading...';
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    // Try to get error details from response
+                    let errorMsg = 'Export failed';
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.details || errorData.error || errorMsg;
+                        console.error('Server error details:', errorData);
+                    } catch (e) {
+                        console.error('Could not parse error response');
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                // Handle different formats
+                if (format === 'csv') {
+                    // Download CSV directly
+                    const blob = await response.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = `${datasetType}_${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                } else {
+                    // Download JSON
+                    const data = await response.json();
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = `${datasetType}_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+
+                showNotification('✅ Dataset exported successfully!', 'success');
+                btn.textContent = originalText;
+                btn.disabled = false;
+
+            } catch (error) {
+                console.error('Export error:', error);
+                showNotification(`❌ Failed to export dataset: ${error.message}`, 'error');
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function showMLDatasetInfo() {
+            const exportType = document.getElementById('exportType').value;
+            const infoDiv = document.getElementById('mlDatasetInfo');
+
+            if (exportType.includes('dataset')) {
+                infoDiv.style.display = 'block';
+
+                const descriptions = {
+                    'ml-dataset': 'Complete dataset with user questions, bot responses, intent classifications, confidence scores, entities, sentiment, and feedback ratings. Perfect for training agricultural chatbot ML models.',
+                    'feedback-dataset': 'Labeled feedback data showing which responses were helpful/unhelpful. Ideal for training response quality classifiers and supervised learning models.',
+                    'intent-dataset': 'User messages with their classified intents. Perfect for training NLP intent classification models.'
+                };
+
+                infoDiv.innerHTML = `
+                    <strong style="color: #1976d2;">▦ ${exportType.replace('-', ' ').toUpperCase()}</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #555;">
+                        ${descriptions[exportType]}
+                    </p>
+                `;
+            } else {
+                infoDiv.style.display = 'none';
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                background: ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#3498db'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                z-index: 10000;
+                font-size: 14px;
+                font-weight: 500;
+                animation: slideIn 0.3s ease;
+                max-width: 400px;
+            `;
+            notification.textContent = message;
+
+            // Add animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(400px); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(400px); opacity: 0; }
+                }
+            `;
+            if (!document.querySelector('style[data-notification]')) {
+                style.setAttribute('data-notification', 'true');
+                document.head.appendChild(style);
+            }
+
+            document.body.appendChild(notification);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Utility Functions
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+        }
+
+        // Real-time Updates
+        function startRealTimeUpdates() {
+            realTimeInterval = setInterval(() => {
+                // Real-time data updates (less frequent for real data)
+                updateStats();
+                loadActivityFeed();
+            }, 300000); // Update every 5 minutes
+        }
+
+        function updateStats() {
+            // Load real data from API
+            loadDashboardData();
+        }
+
+        // Filter by Region
+        async function filterByRegion(region) {
+            selectedRegion = region;
+            showNotification(`🌍 Filtering data for: ${region === 'all' ? 'All Regions' : region.charAt(0).toUpperCase() + region.slice(1)}`, 'info');
+
+            try {
+                // Reload current section data with new region filter
+                const currentSection = document.querySelector('.nav-item.active')?.dataset.section || 'dashboard';
+                await loadSectionData(currentSection);
+                showNotification('✅ Region filter applied successfully!', 'success');
+            } catch (error) {
+                console.error('Region filter error:', error);
+                showNotification('❌ Failed to apply region filter', 'error');
+            }
+        }
+
+        // Action Functions
+        async function refreshData() {
+            showNotification('🔄 Refreshing all data...', 'info');
+
+            try {
+                // Reload data based on current section
+                const currentSection = document.querySelector('.nav-item.active')?.dataset.section || 'dashboard';
+
+                await loadSectionData(currentSection);
+
+                // Update all charts
+                if (charts.activity) {
+                    await updateActivityChart('week');
+                }
+
+                showNotification('✅ Data refreshed successfully!', 'success');
+            } catch (error) {
+                console.error('Refresh error:', error);
+                showNotification('❌ Failed to refresh data', 'error');
+            }
+        }
+
+        async function generateReport() {
+            showNotification('📄 Generating comprehensive PDF report...', 'info');
+
+            try {
+                // Generate a comprehensive PDF report with all analytics data
+                const response = await fetch('/admin/analytics/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'analytics',
+                        format: 'pdf',  // Request PDF format for comprehensive report
+                        start_date: '',
+                        end_date: ''
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to generate report');
+                }
+
+                // The response is a PDF file
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `AgriBot_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showNotification('✅ PDF report generated and downloaded!', 'success');
+
+                // Update last report time
+                if (document.getElementById('lastReportTime')) {
+                    document.getElementById('lastReportTime').textContent = new Date().toLocaleTimeString();
+                }
+            } catch (error) {
+                console.error('Report generation error:', error);
+                showNotification(`❌ ${error.message}`, 'error');
+            }
+        }
+
+        // Export report function for Reports section
+        async function exportReport(type) {
+            showNotification(`📊 Generating ${type} report...`, 'info');
+
+            try {
+                const response = await fetch('/admin/analytics/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: type,
+                        format: 'csv',
+                        start_date: '',
+                        end_date: ''
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to generate report');
+                }
+
+                // The response is already a file download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${type}_report_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showNotification('✅ Report downloaded successfully!', 'success');
+
+                // Update last report time
+                document.getElementById('lastReportTime').textContent = new Date().toLocaleTimeString();
+            } catch (error) {
+                console.error('Export error:', error);
+                showNotification(`❌ ${error.message}`, 'error');
+            }
+        }
+
+        function editUser(userId) {
+            console.log('Editing user:', userId);
+            // TODO: Implement user editing modal
+        }
+
+        async function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`/api/auth/admin/users/${userId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Refresh the users table to show updated data
+                        loadUsersTable();
+                        // Also refresh the dashboard stats
+                        loadDashboardData();
+                    } else {
+                        const error = await response.json();
+                        console.error('Delete failed:', error.error);
+                    }
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                }
+            }
+        }
+
+        async function exportUsers() {
+            try {
+                const response = await fetch('/api/auth/admin/users?per_page=1000');
+                const data = await response.json();
+
+                if (data.users && data.users.length > 0) {
+                    downloadCSV(data.users, 'all_users');
+                } else {
+                    alert('No users to export');
+                }
+            } catch (error) {
+                console.error('Error exporting users:', error);
+                alert('Failed to export users');
+            }
+        }
+
+        async function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                try {
+                    // Call the logout API to clear the session
+                    const response = await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    // Redirect to login page regardless of API response
+                    // This ensures user is logged out even if API fails
+                    window.location.href = '/login.html';
+
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    // Still redirect to login page even if logout API fails
+                    window.location.href = '/login.html';
+                }
+            }
+        }
+
+        // Mobile Support
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => {
+            if (realTimeInterval) {
+                clearInterval(realTimeInterval);
+            }
+        });
+    </script>
+</body>
+</html>

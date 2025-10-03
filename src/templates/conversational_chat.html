@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriBot - Enhanced AI Farm Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: 600px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: #f8f9ff;
+            border-right: 1px solid #e1e5e9;
+            padding: 25px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .bot-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        .chat-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .user-info {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #e1e5e9;
+            margin-bottom: 20px;
+        }
+
+        .user-info h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .conversation-info {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #e1e5e9;
+            font-size: 12px;
+        }
+
+        .conversation-info h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 4px 0;
+        }
+
+        .clear-btn {
+            width: 100%;
+            padding: 10px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: auto;
+            font-size: 14px;
+        }
+
+        .clear-btn:hover {
+            background: #5a6268;
+        }
+
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-bar {
+            padding: 8px 20px;
+            background: #f8f9ff;
+            border-bottom: 1px solid #e1e5e9;
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4caf50;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 25px 20px;
+            overflow-y: auto;
+            background: #fafbfc;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: messageAppear 0.3s ease-out;
+        }
+
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 85%;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .message-bubble {
+            background: white;
+            color: #333;
+            border: 1px solid #e1e5e9;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            white-space: pre-wrap;
+        }
+
+        .message.bot {
+            text-align: left;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .message-metadata {
+            font-size: 10px;
+            color: #888;
+            margin-top: 4px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .confidence-indicator {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: bold;
+        }
+        
+        .confidence-high { background: #e8f5e9; color: #2e7d32; }
+        .confidence-medium { background: #fff3e0; color: #f57c00; }
+        .confidence-low { background: #ffebee; color: #d32f2f; }
+        
+        .intent-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 9px;
+        }
+        
+        .entity-tags {
+            margin: 8px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .entity-tag {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 10px;
+            color: #666;
+        }
+        
+        .entity-tag.crop { border-color: #4caf50; color: #2e7d32; background: #e8f5e9; }
+        .entity-tag.region { border-color: #2196f3; color: #1565c0; background: #e3f2fd; }
+        .entity-tag.disease { border-color: #ff9800; color: #ef6c00; background: #fff3e0; }
+        .entity-tag.pest { border-color: #f44336; color: #c62828; background: #ffebee; }
+        .entity-tag.time_reference { border-color: #9c27b0; color: #7b1fa2; background: #f3e5f5; }
+        .entity-tag.quantitie { border-color: #607d8b; color: #455a64; background: #eceff1; }
+        
+        .suggestions-container {
+            margin-top: 12px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .suggestion-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        
+        .suggestion-chip {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 4px 8px;
+            border-radius: 16px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .suggestion-chip:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .sentiment-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+        
+        .sentiment-positive { background: #4caf50; }
+        .sentiment-negative { background: #f44336; }
+        .sentiment-neutral { background: #9e9e9e; }
+
+        .feedback-section {
+            margin-top: 10px;
+            padding: 8px 0;
+        }
+
+        .feedback-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .feedback-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .feedback-btn.positive {
+            background: #e8f5e9;
+            color: #4caf50;
+            border: 1px solid #4caf50;
+        }
+
+        .feedback-btn.negative {
+            background: #ffebee;
+            color: #f44336;
+            border: 1px solid #f44336;
+        }
+
+        .feedback-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .enhanced-feedback {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 8px;
+            border-left: 3px solid #4caf50;
+            display: none;
+        }
+        
+        .feedback-dimensions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .rating-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .rating-stars {
+            display: flex;
+            gap: 2px;
+        }
+        
+        .star {
+            cursor: pointer;
+            color: #ddd;
+            font-size: 16px;
+            transition: color 0.2s;
+        }
+        
+        .star.active, .star:hover {
+            color: #ffc107;
+        }
+        
+        .nlp-debug {
+            display: none;
+            background: #f0f0f0;
+            padding: 8px;
+            margin: 4px 0;
+            font-size: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        .debug-toggle {
+            font-size: 10px;
+            color: #888;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px 20px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .typing-dots {
+            display: inline-block;
+        }
+
+        .typing-dots span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #667eea;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            position: relative;
+        }
+
+        .message-input {
+            flex: 1;
+            min-height: 44px;
+            max-height: 120px;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 22px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .message-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-button {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .welcome-message {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+            font-size: 16px;
+        }
+
+        .welcome-message h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .cursor {
+            display: inline-block;
+            background-color: #333;
+            width: 2px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 100vh;
+                max-width: none;
+                border-radius: 0;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .messages-container {
+                padding: 15px;
+            }
+
+            .entity-tags, .suggestion-chips {
+                justify-content: center;
+            }
+            
+            .feedback-dimensions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="sidebar">
+            <div class="chat-header">
+                <div class="bot-avatar">🧠</div>
+                <div class="chat-title">AgriBot AI</div>
+            </div>
+
+            <div class="user-info">
+                <h4>Your Profile</h4>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="userName" placeholder="Your name" value="Friend">
+                </div>
+                <div class="form-group">
+                    <label>Region</label>
+                    <select id="userRegion">
+                        <option value="centre">Centre (Yaoundé)</option>
+                        <option value="littoral">Littoral (Douala)</option>
+                        <option value="west">West (Bafoussam)</option>
+                        <option value="northwest">Northwest (Bamenda)</option>
+                        <option value="southwest">Southwest (Buea)</option>
+                        <option value="east">East (Bertoua)</option>
+                        <option value="north">North (Garoua)</option>
+                        <option value="far_north">Far North (Maroua)</option>
+                        <option value="adamawa">Adamawa (Ngaoundéré)</option>
+                        <option value="south">South (Ebolowa)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="showNlpDebug" onchange="toggleNlpDebug()"> 
+                        Show AI Debug Info
+                    </label>
+                </div>
+            </div>
+
+            <div class="conversation-info">
+                <h4>Conversation Insights</h4>
+                <div class="info-item">
+                    <span>Messages:</span>
+                    <span id="messageCount">0</span>
+                </div>
+                <div class="info-item">
+                    <span>Current Intent:</span>
+                    <span id="currentIntent">Getting started</span>
+                </div>
+                <div class="info-item">
+                    <span>Avg Confidence:</span>
+                    <span id="avgConfidence">-</span>
+                </div>
+                <div class="info-item">
+                    <span>Crops discussed:</span>
+                    <span id="cropsDiscussed">None</span>
+                </div>
+                <div class="info-item">
+                    <span>AI Sentiment:</span>
+                    <span id="conversationSentiment">Neutral</span>
+                </div>
+            </div>
+
+            <button class="clear-btn" onclick="clearConversation()">New Conversation</button>
+        </div>
+
+        <div class="chat-main">
+            <div class="status-bar">
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>Enhanced AI Online</span>
+                </div>
+                <span id="sessionInfo">NLP Ready</span>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-message">
+                    <h3>Welcome to Enhanced AgriBot! 🌱</h3>
+                    <p>I'm your AI-powered farming assistant with advanced natural language understanding. I can help with crops, diseases, fertilizers, planting advice, and much more. Try asking me anything about agriculture!</p>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                Enhanced AI is thinking...
+            </div>
+
+            <div class="input-area">
+                <div class="input-container">
+                    <textarea 
+                        id="messageInput" 
+                        class="message-input" 
+                        placeholder="Ask me about farming, weather, crops, diseases, or anything agricultural..."
+                        rows="1"></textarea>
+                    <button id="sendButton" class="send-button">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let messageCount = 0;
+        let conversationId = null;
+        let isTyping = false;
+        let confidenceScores = [];
+        let showDebug = false;
+
+        // DOM elements
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const messageCountEl = document.getElementById('messageCount');
+        const currentIntentEl = document.getElementById('currentIntent');
+        const cropsDiscussedEl = document.getElementById('cropsDiscussed');
+        const sessionInfo = document.getElementById('sessionInfo');
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Send message on Enter (but allow Shift+Enter for new lines)
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        sendButton.addEventListener('click', sendMessage);
+
+        function addMessage(content, type, convId = null, nlpData = {}) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            
+            const time = document.createElement('div');
+            time.className = 'message-time';
+            time.textContent = new Date().toLocaleTimeString();
+            
+            messageDiv.appendChild(bubble);
+            messageDiv.appendChild(time);
+
+            // Remove welcome message if it exists
+            const welcomeMsg = messagesContainer.querySelector('.welcome-message');
+            if (welcomeMsg) {
+                welcomeMsg.remove();
+            }
+
+            messagesContainer.appendChild(messageDiv);
+
+            if (type === 'user') {
+                bubble.textContent = content;
+                messageCount++;
+                messageCountEl.textContent = messageCount;
+            } else {
+                // Enhanced bot message with NLP metadata
+                typeMessage(bubble, content, () => {
+                    // Add NLP metadata after typing
+                    if (nlpData.intent || nlpData.confidence !== undefined || nlpData.entities) {
+                        addNlpMetadata(messageDiv, nlpData);
+                    }
+                    
+                    // Add enhanced feedback section
+                    if (convId) {
+                        addEnhancedFeedback(messageDiv, convId, nlpData);
+                    }
+                    
+                    // Add follow-up suggestions
+                    if (nlpData.follow_up_suggestions && nlpData.follow_up_suggestions.length > 0) {
+                        addSuggestions(messageDiv, nlpData.follow_up_suggestions);
+                    }
+                });
+            }
+
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addNlpMetadata(messageDiv, nlpData) {
+            const metadataDiv = document.createElement('div');
+            metadataDiv.className = 'message-metadata';
+            
+            let metadataHTML = '';
+            
+            // Confidence indicator
+            if (nlpData.confidence !== undefined) {
+                const confidenceLevel = nlpData.confidence > 0.7 ? 'high' : 
+                                       nlpData.confidence > 0.4 ? 'medium' : 'low';
+                metadataHTML += `<span class="confidence-indicator confidence-${confidenceLevel}">
+                    Confidence: ${(nlpData.confidence * 100).toFixed(0)}%
+                </span>`;
+                
+                // Track confidence for averaging
+                confidenceScores.push(nlpData.confidence);
+                const avgConf = confidenceScores.reduce((a, b) => a + b) / confidenceScores.length;
+                document.getElementById('avgConfidence').textContent = (avgConf * 100).toFixed(0) + '%';
+            }
+            
+            // Intent badge
+            if (nlpData.intent) {
+                metadataHTML += `<span class="intent-badge">${nlpData.intent.replace('_', ' ')}</span>`;
+                document.getElementById('currentIntent').textContent = nlpData.intent.replace('_', ' ');
+            }
+            
+            // Sentiment indicator
+            if (nlpData.sentiment && nlpData.sentiment.compound !== undefined) {
+                const sentimentClass = nlpData.sentiment.compound > 0.1 ? 'positive' : 
+                                      nlpData.sentiment.compound < -0.1 ? 'negative' : 'neutral';
+                metadataHTML += `<span class="sentiment-indicator sentiment-${sentimentClass}" 
+                    title="Sentiment: ${sentimentClass}"></span>`;
+                
+                document.getElementById('conversationSentiment').textContent = 
+                    sentimentClass.charAt(0).toUpperCase() + sentimentClass.slice(1);
+            }
+            
+            if (metadataHTML) {
+                metadataDiv.innerHTML = metadataHTML;
+                messageDiv.appendChild(metadataDiv);
+            }
+            
+            // Add entity tags if entities detected
+            if (nlpData.entities) {
+                addEntityTags(messageDiv, nlpData.entities);
+            }
+            
+            // Add debug info if enabled
+            if (showDebug) {
+                addDebugInfo(messageDiv, nlpData);
+            }
+        }
+
+        function addEntityTags(messageDiv, entities) {
+            const hasEntities = Object.values(entities).some(arr => arr && arr.length > 0);
+            
+            if (hasEntities) {
+                const tagsDiv = document.createElement('div');
+                tagsDiv.className = 'entity-tags';
+                
+                Object.entries(entities).forEach(([type, items]) => {
+                    if (items && items.length > 0) {
+                        items.forEach(item => {
+                            const tag = document.createElement('span');
+                            tag.className = `entity-tag ${type.slice(0, -1)}`; // Remove 's' from plural
+                            tag.textContent = `${type.slice(0, -1)}: ${item}`;
+                            tagsDiv.appendChild(tag);
+                        });
+                    }
+                });
+                
+                messageDiv.appendChild(tagsDiv);
+            }
+        }
+
+        function addSuggestions(messageDiv, suggestions) {
+            const suggestionsDiv = document.createElement('div');
+            suggestionsDiv.className = 'suggestions-container';
+            suggestionsDiv.innerHTML = '<div style="font-size: 11px; color: #666; margin-bottom: 4px;">💡 You might also ask:</div>';
+            
+            const chipsDiv = document.createElement('div');
+            chipsDiv.className = 'suggestion-chips';
+            
+            suggestions.forEach(suggestion => {
+                const chip = document.createElement('span');
+                chip.className = 'suggestion-chip';
+                chip.textContent = suggestion;
+                chip.onclick = () => {
+                    messageInput.value = suggestion;
+                    sendMessage();
+                };
+                chipsDiv.appendChild(chip);
+            });
+            
+            suggestionsDiv.appendChild(chipsDiv);
+            messageDiv.appendChild(suggestionsDiv);
+        }
+
+        function addEnhancedFeedback(messageDiv, convId, nlpData) {
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'enhanced-feedback';
+            
+            feedbackDiv.innerHTML = `
+                <div style="font-size: 12px; margin-bottom: 8px; font-weight: bold;">📊 Rate this response:</div>
+                <div class="feedback-dimensions">
+                    <div class="rating-group">
+                        <label style="font-size: 10px;">Accuracy</label>
+                        <div class="rating-stars" data-rating="accuracy">
+                            ${[1,2,3,4,5].map(i => `<span class="star" data-value="${i}">★</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="rating-group">
+                        <label style="font-size: 10px;">Completeness</label>
+                        <div class="rating-stars" data-rating="completeness">
+                            ${[1,2,3,4,5].map(i => `<span class="star" data-value="${i}">★</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="rating-group">
+                        <label style="font-size: 10px;">Helpfulness</label>
+                        <div class="rating-stars" data-rating="helpfulness">
+                            ${[1,2,3,4,5].map(i => `<span class="star" data-value="${i}">★</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+                <textarea placeholder="Any suggestions for improvement?" rows="2" 
+                    style="width: 100%; font-size: 11px; margin: 5px 0; padding: 4px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                <div style="text-align: right;">
+                    <button onclick="submitEnhancedFeedback(this, ${convId})" 
+                        style="background: #4caf50; color: white; border: none; padding: 4px 8px; 
+                               border-radius: 4px; font-size: 11px; cursor: pointer;">Submit</button>
+                </div>
+            `;
+            
+            // Add star rating functionality
+            feedbackDiv.querySelectorAll('.star').forEach(star => {
+                star.addEventListener('click', function() {
+                    const ratingGroup = this.closest('.rating-stars');
+                    const value = parseInt(this.dataset.value);
+                    
+                    // Update visual feedback
+                    ratingGroup.querySelectorAll('.star').forEach((s, index) => {
+                        s.classList.toggle('active', index < value);
+                    });
+                    
+                    // Store rating
+                    ratingGroup.dataset.selectedRating = value;
+                });
+            });
+            
+            // Add simple thumbs up/down for quick feedback
+            const quickFeedback = document.createElement('div');
+            quickFeedback.className = 'feedback-buttons';
+            quickFeedback.innerHTML = `
+                <button class="feedback-btn positive" onclick="quickFeedback(${convId}, true, this)">👍 Helpful</button>
+                <button class="feedback-btn negative" onclick="quickFeedback(${convId}, false, this)">👎 Not helpful</button>
+                <button class="feedback-btn" onclick="showDetailedFeedback(this)" style="background: #e3f2fd; color: #1976d2;">⚙️ Detailed</button>
+            `;
+            
+            messageDiv.appendChild(quickFeedback);
+            messageDiv.appendChild(feedbackDiv);
+        }
+
+        function addDebugInfo(messageDiv, nlpData) {
+            const debugDiv = document.createElement('div');
+            debugDiv.className = 'nlp-debug';
+            debugDiv.innerHTML = `
+                <div class="debug-toggle" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                    🔍 NLP Debug Info
+                </div>
+                <div style="display: none;">
+                    <strong>Raw NLP Data:</strong><br>
+                    <pre>${JSON.stringify(nlpData, null, 2)}</pre>
+                </div>
+            `;
+            messageDiv.appendChild(debugDiv);
+        }
+
+        function showDetailedFeedback(button) {
+            const feedbackDiv = button.parentElement.nextElementSibling;
+            feedbackDiv.style.display = feedbackDiv.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function quickFeedback(convId, helpful, button) {
+            submitFeedback(convId, helpful);
+            button.parentElement.innerHTML = '<div style="color: #4caf50; font-size: 12px; text-align: center; padding: 5px;">Thank you for your feedback!</div>';
+        }
+
+        function submitEnhancedFeedback(button, convId) {
+            const feedbackDiv = button.closest('.enhanced-feedback');
+            const ratings = {};
+            
+            // Collect ratings
+            feedbackDiv.querySelectorAll('.rating-stars').forEach(ratingGroup => {
+                const type = ratingGroup.dataset.rating;
+                const rating = ratingGroup.dataset.selectedRating || 0;
+                ratings[type] = parseInt(rating);
+            });
+            
+            const comment = feedbackDiv.querySelector('textarea').value;
+            
+            // Submit enhanced feedback
+            fetch('/api/feedback', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    conversation_id: convId,
+                    helpful: ratings.helpfulness >= 3,
+                    rating: ratings.helpfulness || 3,
+                    accuracy_rating: ratings.accuracy || 3,
+                    completeness_rating: ratings.completeness || 3,
+                    comment: comment,
+                    detailed_ratings: ratings
+                })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    button.parentElement.parentElement.innerHTML = 
+                        '<div style="color: #4caf50; font-size: 12px; text-align: center; padding: 10px;">Thank you for the detailed feedback! This helps me improve.</div>';
+                }
+            }).catch(error => console.error('Feedback error:', error));
+        }
+
+        function toggleNlpDebug() {
+            showDebug = document.getElementById('showNlpDebug').checked;
+            const debugElements = document.querySelectorAll('.nlp-debug');
+            debugElements.forEach(el => {
+                el.style.display = showDebug ? 'block' : 'none';
+            });
+        }
+
+        function typeMessage(element, text, callback) {
+            isTyping = true;
+            let index = 0;
+            element.textContent = '';
+            
+            // Add cursor while typing
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor';
+            cursor.innerHTML = '|';
+            element.appendChild(cursor);
+            
+            function typeCharacter() {
+                if (index < text.length) {
+                    const char = text.charAt(index);
+                    
+                    // Insert character before cursor
+                    const textNode = document.createTextNode(char);
+                    element.insertBefore(textNode, cursor);
+                    index++;
+                    
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    
+                    // Vary typing speed based on punctuation for natural feel
+                    let delay = 30; // Faster base typing speed for better UX
+                    
+                    if (char === '.' || char === '!' || char === '?') {
+                        delay = 400; // Shorter pause after sentences
+                    } else if (char === ',' || char === ':' || char === ';') {
+                        delay = 150; // Medium pause after clauses
+                    } else if (char === '\n') {
+                        delay = 200; // Pause at line breaks
+                    } else if (char === ' ') {
+                        delay = 50; // Slight pause at spaces
+                    } else if (char === '*') {
+                        delay = 80; // Pause at bullet points
+                    }
+                    
+                    // Add some randomness for more natural feel
+                    delay += Math.random() * 15;
+                    
+                    setTimeout(typeCharacter, delay);
+                } else {
+                    // Remove cursor when done
+                    cursor.remove();
+                    isTyping = false;
+                    if (callback) callback();
+                }
+            }
+            
+            // Start typing after small delay
+            setTimeout(typeCharacter, 150);
+        }
+
+        function showTyping() {
+            typingIndicator.style.display = 'block';
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTyping() {
+            typingIndicator.style.display = 'none';
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || isTyping) return;
+
+            const userName = document.getElementById('userName').value || 'Friend';
+            const userRegion = document.getElementById('userRegion').value;
+
+            // Add user message
+            addMessage(message, 'user');
+            
+            // Clear input and show typing
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            sendButton.disabled = true;
+            showTyping();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        message: message,
+                        user_name: userName,
+                        region: userRegion
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    hideTyping();
+                    
+                    // Add message with enhanced NLP data
+                    addMessage(data.response, 'bot', data.conversation_id, {
+                        intent: data.intent,
+                        confidence: data.confidence,
+                        sentiment: data.sentiment,
+                        entities: data.entities,
+                        follow_up_suggestions: data.follow_up_suggestions
+                    });
+                    
+                    updateConversationInfo(data);
+                    updateSessionInfo(`Enhanced AI processed: ${new Date().toLocaleTimeString()}`);
+                } else {
+                    hideTyping();
+                    addMessage(data.error || 'Sorry, something went wrong. Please try again.', 'bot');
+                }
+
+            } catch (error) {
+                hideTyping();
+                addMessage('Sorry, I\'m having trouble connecting. Please check your internet and try again.', 'bot');
+                updateSessionInfo('Connection error');
+            } finally {
+                sendButton.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        function updateConversationInfo(data) {
+            if (data.current_topic) {
+                let topicDisplay = data.current_topic.replace('_', ' ');
+                topicDisplay = topicDisplay.charAt(0).toUpperCase() + topicDisplay.slice(1);
+                currentIntentEl.textContent = topicDisplay;
+            }
+            
+            if (data.mentioned_crops && data.mentioned_crops.length > 0) {
+                cropsDiscussedEl.textContent = data.mentioned_crops.join(', ');
+            }
+
+            conversationId = data.conversation_id;
+        }
+
+        function updateSessionInfo(info) {
+            sessionInfo.textContent = info;
+        }
+
+        async function submitFeedback(convId, helpful) {
+            try {
+                const response = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        conversation_id: convId,
+                        helpful: helpful,
+                        rating: helpful ? 5 : 2
+                    })
+                });
+
+                if (response.ok) {
+                    // Feedback submitted successfully - visual feedback handled by caller
+                }
+            } catch (error) {
+                console.error('Feedback error:', error);
+            }
+        }
+
+        async function clearConversation() {
+            if (confirm('Start a new conversation? This will clear our chat history and AI context.')) {
+                try {
+                    await fetch('/api/clear-conversation', { method: 'POST' });
+                    
+                    // Reset UI
+                    messagesContainer.innerHTML = `
+                        <div class="welcome-message">
+                            <h3>New Enhanced Conversation Started!</h3>
+                            <p>I'm ready with a fresh AI context to help with your farming questions. What would you like to know?</p>
+                        </div>
+                    `;
+                    
+                    // Reset counters and context
+                    messageCount = 0;
+                    confidenceScores = [];
+                    messageCountEl.textContent = '0';
+                    currentIntentEl.textContent = 'Getting started';
+                    cropsDiscussedEl.textContent = 'None';
+                    document.getElementById('avgConfidence').textContent = '-';
+                    document.getElementById('conversationSentiment').textContent = 'Neutral';
+                    updateSessionInfo('New enhanced conversation ready');
+                    
+                } catch (error) {
+                    console.error('Clear conversation error:', error);
+                }
+            }
+        }
+
+        // Focus input on load
+        window.onload = () => {
+            messageInput.focus();
+            updateSessionInfo('Enhanced AI ready');
+        };
+
+        // Update session info periodically
+        setInterval(() => {
+            if (sessionInfo.textContent.includes('ready') || sessionInfo.textContent.includes('processed')) {
+                updateSessionInfo(`AI Online • ${new Date().toLocaleTimeString()}`);
+            }
+        }, 30000);
+
+        // Prevent sending messages while typing
+        messageInput.addEventListener('keypress', function(e) {
+            if (isTyping && e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+
+        // Auto-save user preferences
+        document.getElementById('userName').addEventListener('change', function() {
+            localStorage.setItem('agribot_username', this.value);
+        });
+
+        document.getElementById('userRegion').addEventListener('change', function() {
+            localStorage.setItem('agribot_region', this.value);
+        });
+
+        // Load saved preferences
+        const savedName = localStorage.getItem('agribot_username');
+        const savedRegion = localStorage.getItem('agribot_region');
+
+        if (savedName) {
+            document.getElementById('userName').value = savedName;
+        }
+        if (savedRegion) {
+            document.getElementById('userRegion').value = savedRegion;
+        }
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Enter to send message
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                sendMessage();
+            }
+            
+            // Ctrl/Cmd + N for new conversation
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                clearConversation();
+            }
+            
+            // Escape to focus input
+            if (e.key === 'Escape') {
+                messageInput.focus();
+            }
+        });
+
+        // Add touch support for mobile
+        let touchStartY = 0;
+        messagesContainer.addEventListener('touchstart', function(e) {
+            touchStartY = e.touches[0].clientY;
+        });
+
+        messagesContainer.addEventListener('touchmove', function(e) {
+            const touchY = e.touches[0].clientY;
+            const touchDiff = touchStartY - touchY;
+            
+            // Smooth scrolling on mobile
+            if (Math.abs(touchDiff) > 5) {
+                this.scrollTop += touchDiff * 0.5;
+            }
+        });
+
+        // Handle online/offline status
+        window.addEventListener('online', function() {
+            updateSessionInfo('Enhanced AI back online');
+            document.querySelector('.status-dot').style.background = '#4caf50';
+        });
+
+        window.addEventListener('offline', function() {
+            updateSessionInfo('Offline - check connection');
+            document.querySelector('.status-dot').style.background = '#f44336';
+        });
+
+        // Add analytics tracking
+        function trackEvent(eventName, eventData = {}) {
+            // In production, send to analytics service
+            console.log(`Event: ${eventName}`, eventData);
+        }
+
+        // Track user interactions
+        messageInput.addEventListener('focus', () => trackEvent('input_focus'));
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('suggestion-chip')) {
+                trackEvent('suggestion_clicked', { suggestion: e.target.textContent });
+            }
+        });
+    </script>
+</body>
+</html>

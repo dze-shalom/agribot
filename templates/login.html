@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriBot - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 900px;
+            min-height: 600px;
+            display: flex;
+        }
+
+        .auth-visual {
+            flex: 1;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+
+        .visual-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .visual-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+
+        .auth-visual h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            font-weight: 700;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-visual p {
+            font-size: 18px;
+            opacity: 0.9;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .features-list {
+            list-style: none;
+            text-align: left;
+        }
+
+        .features-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .features-list li::before {
+            content: '\2713';
+            background: #27ae60;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .auth-form-container {
+            flex: 1;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .auth-tab.active {
+            background: white;
+            color: #2c3e50;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            background: #fafbfc;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            background: #fafbfc;
+            cursor: pointer;
+        }
+
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .form-checkbox input {
+            width: 18px;
+            height: 18px;
+        }
+
+        .form-checkbox label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .auth-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .auth-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .auth-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .account-type-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .account-type {
+            padding: 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafbfc;
+        }
+
+        .account-type.selected {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .account-type-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .account-type-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .account-type-desc {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .forgot-password a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        .demo-credentials {
+            background: #f39c12;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .auth-container {
+                flex-direction: column;
+                max-width: 400px;
+            }
+
+            .auth-visual {
+                padding: 40px 20px;
+            }
+
+            .auth-form-container {
+                padding: 40px 20px;
+            }
+
+            .account-type-selector {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Visual Section -->
+        <div class="auth-visual">
+            <div class="visual-logo">
+                <img src="/static/images/company-logo.jpeg" alt="AgriBot Logo">
+            </div>
+
+            <h2 id="visualTitle">Welcome Back to AgriBot</h2>
+            <p id="visualSubtitle">Your intelligent agricultural assistant for Cameroon's farmers</p>
+
+            <ul class="features-list">
+                <li>AI-powered farming advice</li>
+                <li>Weather integration</li>
+                <li>Crop disease detection</li>
+                <li>Regional expertise</li>
+                <li>Multi-language support</li>
+                <li>24/7 assistance</li>
+            </ul>
+        </div>
+
+        <!-- Form Section -->
+        <div class="auth-form-container">
+            <div class="logo-section">
+                <h1 class="logo-text" style="margin: 0; color: #2c3e50; font-size: 32px; font-weight: 700;">AgriBot</h1>
+                <p style="color: #666; font-size: 14px; margin-top: 8px;">Smart farming solutions for Cameroon</p>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="auth-tabs">
+                <div class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
+                <div class="auth-tab" onclick="switchAuthTab('register')">Sign Up</div>
+            </div>
+
+            <!-- Alert Messages -->
+            <div id="alertContainer"></div>
+
+            <!-- Login Form -->
+            <form class="auth-form active" id="loginForm">
+                <div class="account-type-selector">
+                    <div class="account-type" onclick="selectAccountType('user', 'login')">
+                        <div class="account-type-icon">👤</div>
+                        <div class="account-type-title">User</div>
+                        <div class="account-type-desc">Access AgriBot assistant</div>
+                    </div>
+                    <div class="account-type selected" onclick="selectAccountType('admin', 'login')">
+                        <div class="account-type-icon">⚙️</div>
+                        <div class="account-type-title">Admin</div>
+                        <div class="account-type-desc">Access analytics dashboard</div>
+                    </div>
+                </div>
+
+                <input type="hidden" id="loginAccountType" value="admin">
+
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-input" id="loginEmail" placeholder="Enter your email" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+
+                <div class="form-checkbox">
+                    <input type="checkbox" id="rememberMe">
+                    <label for="rememberMe">Remember me</label>
+                </div>
+
+                <button type="submit" class="auth-button">Sign In</button>
+
+                <div class="forgot-password">
+                    <a href="#" onclick="showForgotPassword()">Forgot your password?</a>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form class="auth-form" id="registerForm">
+                <div class="account-type-selector">
+                    <div class="account-type selected" onclick="selectAccountType('user', 'register')">
+                        <div class="account-type-icon">👤</div>
+                        <div class="account-type-title">User</div>
+                        <div class="account-type-desc">Get farming assistance</div>
+                    </div>
+                    <div class="account-type disabled" style="opacity: 0.5; cursor: not-allowed;" onclick="selectAccountType('admin', 'register')" title="Admin signup is disabled. Admin account already exists.">
+                        <div class="account-type-icon">⚙️</div>
+                        <div class="account-type-title">Admin</div>
+                        <div class="account-type-desc">Disabled</div>
+                    </div>
+                </div>
+
+                <input type="hidden" id="registerAccountType" value="user">
+
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="registerName" placeholder="Enter your full name" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-input" id="registerEmail" placeholder="Enter your email" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-input" id="registerPhone" placeholder="Enter your phone number">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Country</label>
+                    <select class="form-select" id="registerCountry" required onchange="updateRegionOptions()">
+                        <optgroup label="🌟 Featured">
+                            <option value="Cameroon" selected>🇨🇲 Cameroon</option>
+                        </optgroup>
+                        <optgroup label="Other Countries">
+                            <option value="Nigeria">🇳🇬 Nigeria</option>
+                            <option value="Kenya">🇰🇪 Kenya</option>
+                            <option value="Ghana">🇬🇭 Ghana</option>
+                            <option value="Uganda">🇺🇬 Uganda</option>
+                            <option value="Tanzania">🇹🇿 Tanzania</option>
+                            <option value="Ethiopia">🇪🇹 Ethiopia</option>
+                            <option value="South Africa">🇿🇦 South Africa</option>
+                            <option value="Rwanda">🇷🇼 Rwanda</option>
+                            <option value="Senegal">🇸🇳 Senegal</option>
+                            <option value="Côte d'Ivoire">🇨🇮 Côte d'Ivoire</option>
+                            <option value="Other">🌍 Other</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Region/State</label>
+                    <select class="form-select" id="registerRegion" required>
+                        <option value="">Select your region</option>
+                        <!-- Cameroon regions (default) -->
+                        <option value="Centre">Centre (Yaoundé)</option>
+                        <option value="Littoral">Littoral (Douala)</option>
+                        <option value="West">West (Bafoussam)</option>
+                        <option value="Northwest">Northwest (Bamenda)</option>
+                        <option value="Southwest">Southwest (Buea)</option>
+                        <option value="East">East (Bertoua)</option>
+                        <option value="North">North (Garoua)</option>
+                        <option value="Far North">Far North (Maroua)</option>
+                        <option value="Adamawa">Adamawa (Ngaoundéré)</option>
+                        <option value="South">South (Ebolowa)</option>
+                    </select>
+                    <input type="text" class="form-input" id="registerRegionOther" placeholder="Enter your region/state" style="display: none; margin-top: 10px;">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Preferred Language</label>
+                    <select class="form-select" id="registerLanguage" required>
+                        <option value="en">🇬🇧 English</option>
+                        <option value="fr">🇫🇷 French (Français)</option>
+                        <option value="pcm">🗣️ Pidgin English</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="registerPassword" placeholder="Create a password" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" class="form-input" id="confirmPassword" placeholder="Confirm your password" required>
+                </div>
+
+                <div class="form-checkbox">
+                    <input type="checkbox" id="agreeTerms" required>
+                    <label for="agreeTerms">I agree to the <a href="#" style="color: #667eea;">Terms of Service</a> and <a href="#" style="color: #667eea;">Privacy Policy</a></label>
+                </div>
+
+                <button type="submit" class="auth-button">Sign Up</button>
+            </form>
+
+            <!-- Demo Credentials -->
+            <div class="demo-credentials" onclick="showDemoCredentials()">
+                Click here to view demo login credentials
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAuthTab = 'login';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            loadSavedCredentials();
+            checkExistingSession();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('registerForm').addEventListener('submit', handleRegister);
+            
+            // Real-time validation
+            document.getElementById('registerPassword').addEventListener('input', validatePassword);
+            document.getElementById('confirmPassword').addEventListener('input', validatePasswordMatch);
+            document.getElementById('registerEmail').addEventListener('blur', checkEmailFormat);
+        }
+
+        // Tab switching
+        function switchAuthTab(tab) {
+            currentAuthTab = tab;
+
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[onclick="switchAuthTab('${tab}')"]`).classList.add('active');
+
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            document.getElementById(`${tab}Form`).classList.add('active');
+
+            // Update visual section based on tab
+            const visualTitle = document.getElementById('visualTitle');
+            const visualSubtitle = document.getElementById('visualSubtitle');
+
+            if (tab === 'login') {
+                visualTitle.textContent = 'Welcome Back to AgriBot';
+                visualSubtitle.textContent = 'Your intelligent agricultural assistant for Cameroon\'s farmers';
+            } else {
+                visualTitle.textContent = 'Join AgriBot Today';
+                visualSubtitle.textContent = 'Get expert farming advice and support tailored for Cameroon';
+            }
+
+            clearAlerts();
+        }
+
+        // Account type selection
+        function selectAccountType(type, formType) {
+            // Prevent admin selection in register form
+            if (formType === 'register' && type === 'admin') {
+                showAlert('Admin signup is disabled. Please use the existing admin account.', 'error');
+                return;
+            }
+
+            const container = document.querySelector(`#${formType}Form .account-type-selector`);
+            container.querySelectorAll('.account-type').forEach(t => t.classList.remove('selected'));
+            event.target.closest('.account-type').classList.add('selected');
+
+            document.getElementById(`${formType}AccountType`).value = type;
+        }
+
+        // Handle login
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const accountType = document.getElementById('loginAccountType').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            try {
+                showLoading('loginForm');
+                
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        account_type: accountType
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (rememberMe) {
+                        localStorage.setItem('agribot_remember', JSON.stringify({
+                            email: email,
+                            accountType: accountType
+                        }));
+                    }
+
+                    showAlert('Sign in successful! Redirecting...', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || (accountType === 'admin' ? '/analytics.html' : '/chatbot.html');
+                    }, 1500);
+                    
+                } else {
+                    showAlert(data.error || 'Sign in failed. Please try again.', 'error');
+                }
+                
+            } catch (error) {
+                showAlert('Sign in failed. Please check your connection and try again.', 'error');
+                console.error('Sign in error:', error);
+            } finally {
+                hideLoading('loginForm');
+            }
+        }
+
+        // Handle registration
+        async function handleRegister(event) {
+            event.preventDefault();
+
+            // Get region value (either from dropdown or text input)
+            const country = document.getElementById('registerCountry').value;
+            const regionSelect = document.getElementById('registerRegion');
+            const regionOther = document.getElementById('registerRegionOther');
+            const region = regionSelect.style.display === 'none' ? regionOther.value : regionSelect.value;
+
+            const formData = {
+                name: document.getElementById('registerName').value,
+                email: document.getElementById('registerEmail').value,
+                phone: document.getElementById('registerPhone').value,
+                country: country,  // New: Include country
+                region: region,
+                language: document.getElementById('registerLanguage').value,
+                password: document.getElementById('registerPassword').value,
+                confirmPassword: document.getElementById('confirmPassword').value,
+                accountType: document.getElementById('registerAccountType').value
+            };
+
+            if (!validateRegistrationForm(formData)) {
+                return;
+            }
+
+            try {
+                showLoading('registerForm');
+                
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        name: formData.name,
+                        email: formData.email,
+                        phone: formData.phone,
+                        country: formData.country,  // New: Include country
+                        region: formData.region,
+                        preferred_language: formData.language,
+                        password: formData.password,
+                        account_type: formData.accountType
+                    })
+                });
+
+                const data = await response.json();
+
+                console.log('Registration response:', { status: response.status, ok: response.ok, data: data });
+
+                if (response.ok) {
+                    showAlert('Account created successfully! Please sign in to continue.', 'success');
+
+                    // Clear the form
+                    document.getElementById('registerForm').reset();
+
+                    setTimeout(() => {
+                        switchAuthTab('login');
+                        document.getElementById('loginEmail').value = formData.email;
+                        document.getElementById('loginAccountType').value = formData.accountType;
+
+                        // Update account type selection in login form
+                        const loginContainer = document.querySelector('#loginForm .account-type-selector');
+                        loginContainer.querySelectorAll('.account-type').forEach(t => t.classList.remove('selected'));
+                        const targetIndex = formData.accountType === 'admin' ? 1 : 0;
+                        loginContainer.children[targetIndex].classList.add('selected');
+                    }, 2000);
+
+                } else {
+                    console.error('Registration failed:', data);
+                    showAlert(data.error || 'Registration failed. Please try again.', 'error');
+                }
+
+            } catch (error) {
+                console.error('Registration error:', error);
+                showAlert('Registration failed: ' + error.message, 'error');
+            } finally {
+                hideLoading('registerForm');
+            }
+        }
+
+        // Validation functions
+        function validateRegistrationForm(data) {
+            if (!data.name.trim()) {
+                showAlert('Please enter your full name.', 'error');
+                return false;
+            }
+
+            if (!validateEmail(data.email)) {
+                showAlert('Please enter a valid email address.', 'error');
+                return false;
+            }
+
+            if (!data.region) {
+                showAlert('Please select your region.', 'error');
+                return false;
+            }
+
+            if (data.password.length < 6) {
+                showAlert('Password must be at least 6 characters long.', 'error');
+                return false;
+            }
+
+            if (data.password !== data.confirmPassword) {
+                showAlert('Passwords do not match.', 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function validatePassword() {
+            const password = document.getElementById('registerPassword').value;
+            const passwordField = document.getElementById('registerPassword');
+            
+            if (password.length === 0) {
+                passwordField.style.borderColor = '#e1e5e9';
+                return;
+            }
+            
+            if (password.length < 6) {
+                passwordField.style.borderColor = '#e74c3c';
+                passwordField.style.background = '#fff5f5';
+            } else {
+                passwordField.style.borderColor = '#27ae60';
+                passwordField.style.background = '#f8fff8';
+            }
+        }
+
+        function validatePasswordMatch() {
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const confirmField = document.getElementById('confirmPassword');
+            
+            if (confirmPassword.length === 0) {
+                confirmField.style.borderColor = '#e1e5e9';
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                confirmField.style.borderColor = '#e74c3c';
+                confirmField.style.background = '#fff5f5';
+            } else {
+                confirmField.style.borderColor = '#27ae60';
+                confirmField.style.background = '#f8fff8';
+            }
+        }
+
+        function checkEmailFormat() {
+            const email = document.getElementById('registerEmail').value;
+            const emailField = document.getElementById('registerEmail');
+            
+            if (!email) return;
+            
+            if (!validateEmail(email)) {
+                emailField.style.borderColor = '#e74c3c';
+                emailField.style.background = '#fff5f5';
+            } else {
+                emailField.style.borderColor = '#27ae60';
+                emailField.style.background = '#f8fff8';
+            }
+        }
+
+        // Alert system
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        function clearAlerts() {
+            document.getElementById('alertContainer').innerHTML = '';
+        }
+
+        // Loading states
+        function showLoading(formId) {
+            const form = document.getElementById(formId);
+            const button = form.querySelector('.auth-button');
+            const originalText = button.textContent;
+            
+            button.disabled = true;
+            button.textContent = 'Please wait...';
+            button.style.opacity = '0.6';
+            button.dataset.originalText = originalText;
+        }
+
+        function hideLoading(formId) {
+            const form = document.getElementById(formId);
+            const button = form.querySelector('.auth-button');
+            
+            button.disabled = false;
+            button.textContent = button.dataset.originalText || 'Submit';
+            button.style.opacity = '1';
+        }
+
+        // Remember me functionality
+        function loadSavedCredentials() {
+            const remembered = localStorage.getItem('agribot_remember');
+            if (remembered) {
+                const data = JSON.parse(remembered);
+                document.getElementById('loginEmail').value = data.email;
+                document.getElementById('loginAccountType').value = data.accountType;
+                document.getElementById('rememberMe').checked = true;
+                
+                const loginContainer = document.querySelector('#loginForm .account-type-selector');
+                loginContainer.querySelectorAll('.account-type').forEach(t => t.classList.remove('selected'));
+                const targetType = data.accountType === 'admin' ? 1 : 0;
+                loginContainer.children[targetType].classList.add('selected');
+            }
+        }
+
+        // Session management
+        function checkExistingSession() {
+            // Only check if we're actually on the login page (not being redirected)
+            if (window.location.pathname !== '/login.html') {
+                return;
+            }
+
+            fetch('/api/auth/profile')
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Not authenticated');
+                })
+                .then(data => {
+                    if (data.user) {
+                        // User is already logged in, redirect to appropriate page
+                        if (data.user.account_type === 'admin') {
+                            window.location.href = '/analytics.html';
+                        } else {
+                            window.location.href = '/chatbot.html';
+                        }
+                    }
+                })
+                .catch(() => {
+                    // User not logged in, stay on login page
+                });
+        }
+
+        // Forgot password
+        function showForgotPassword() {
+            const email = prompt('Enter your email address:');
+            if (email && validateEmail(email)) {
+                showAlert('Password reset functionality coming soon! Please contact support.', 'success');
+            } else if (email) {
+                showAlert('Please enter a valid email address.', 'error');
+            }
+        }
+
+        // Update region options based on selected country
+        function updateRegionOptions() {
+            const country = document.getElementById('registerCountry').value;
+            const regionSelect = document.getElementById('registerRegion');
+            const regionOther = document.getElementById('registerRegionOther');
+
+            if (country === 'Cameroon') {
+                // Show Cameroon regions dropdown
+                regionSelect.style.display = 'block';
+                regionOther.style.display = 'none';
+                regionOther.removeAttribute('required');
+                regionSelect.setAttribute('required', 'required');
+            } else {
+                // Show free text input for other countries
+                regionSelect.style.display = 'none';
+                regionOther.style.display = 'block';
+                regionSelect.removeAttribute('required');
+                regionOther.setAttribute('required', 'required');
+            }
+        }
+
+        // Demo credentials
+        function showDemoCredentials() {
+            const demoInfo = `Demo Login Credentials:
+
+Admin Account:
+Email: admin@gmail.com
+Password: admin123
+(Access to analytics dashboard)
+
+User Account:
+Email: user@gmail.com
+Password: user123
+(Access to chatbot interface)`;
+            
+            alert(demoInfo);
+        }
+    </script>
+</body>
+</html>

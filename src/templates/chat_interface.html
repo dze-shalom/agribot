@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriBot Testing Platform - Cameroon Agricultural AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #2E7D32, #4CAF50);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1B5E20, #2E7D32);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: 600px;
+        }
+
+        .sidebar {
+            background: #F5F5F5;
+            padding: 20px;
+            border-right: 1px solid #ddd;
+        }
+
+        .user-info {
+            margin-bottom: 30px;
+        }
+
+        .user-info h3 {
+            color: #2E7D32;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group select:focus, .form-group input:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+
+        .stats {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 5px 0;
+        }
+
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #FAFAFA;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            text-align: right;
+        }
+
+        .user-message .message-bubble {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 20px 20px 5px 20px;
+            display: inline-block;
+            max-width: 70%;
+            box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .bot-message .message-bubble {
+            background: white;
+            color: #333;
+            padding: 15px 20px;
+            border-radius: 20px 20px 20px 5px;
+            display: inline-block;
+            max-width: 80%;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            font-family: 'Courier New', monospace;
+        }
+
+        .message-meta {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .suggestions {
+            margin-top: 15px;
+        }
+
+        .suggestions h4 {
+            color: #2E7D32;
+            margin-bottom: 10px;
+        }
+
+        .suggestion-btn {
+            background: #E8F5E8;
+            border: 1px solid #4CAF50;
+            color: #2E7D32;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .suggestion-btn:hover {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .feedback-section {
+            background: #F0F8F0;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+            border: 1px solid #C8E6C9;
+        }
+
+        .feedback-buttons {
+            margin: 10px 0;
+        }
+
+        .feedback-btn {
+            padding: 8px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .feedback-btn.helpful {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .feedback-btn.not-helpful {
+            background: #F44336;
+            color: white;
+        }
+
+        .feedback-btn.detailed {
+            background: #2196F3;
+            color: white;
+        }
+
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #ddd;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .message-input:focus {
+            border-color: #4CAF50;
+        }
+
+        .send-btn {
+            padding: 15px 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .send-btn:hover {
+            background: #45A049;
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: #666;
+        }
+
+        .analytics-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 20px;
+            transition: background 0.3s;
+        }
+
+        .analytics-link:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .feedback-form {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #4CAF50;
+            margin-top: 10px;
+        }
+
+        .feedback-form.active {
+            display: block;
+        }
+
+        .rating-group {
+            margin: 15px 0;
+        }
+
+        .rating-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 5px;
+        }
+
+        .star {
+            font-size: 20px;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .star.active, .star:hover {
+            color: #FFD700;
+        }
+
+        .feedback-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+        }
+
+        .feedback-submit {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .feedback-cancel {
+            background: #666;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/analytics" class="analytics-link">Analytics Dashboard</a>
+            <h1>AgriBot</h1>
+            <p>Agricultural AI Assistant for Cameroon - Testing Platform</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="user-info">
+                    <h3>User Information</h3>
+                    
+                    <div class="form-group">
+                        <label for="userName">Your Name (Optional)</label>
+                        <input type="text" id="userName" placeholder="Enter your name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="userRegion">Region</label>
+                        <select id="userRegion">
+                            <option value="centre">Centre (Yaoundé)</option>
+                            <option value="littoral">Littoral (Douala)</option>
+                            <option value="west">West (Bafoussam)</option>
+                            <option value="northwest">Northwest (Bamenda)</option>
+                            <option value="southwest">Southwest (Buea)</option>
+                            <option value="east">East (Bertoua)</option>
+                            <option value="north">North (Garoua)</option>
+                            <option value="far_north">Far North (Maroua)</option>
+                            <option value="adamawa">Adamawa (Ngaoundéré)</option>
+                            <option value="south">South (Ebolowa)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="userRole">Role</label>
+                        <select id="userRole">
+                            <option value="farmer">Farmer</option>
+                            <option value="student">Student</option>
+                            <option value="researcher">Researcher</option>
+                            <option value="extension_worker">Extension Worker</option>
+                            <option value="agribusiness">Agribusiness</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <h3>Session Stats</h3>
+                    <div class="stat-item">
+                        <span>Questions Asked:</span>
+                        <span id="questionCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Avg Confidence:</span>
+                        <span id="avgConfidence">0%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-area">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot-message">
+                        <div class="message-bubble">
+                            <strong>Welcome to AgriBot!</strong>
+
+I'm here to help with all your agricultural questions about farming in Cameroon. You can ask me about:
+
+CROP CULTIVATION - planting procedures, care, harvest timing
+PESTS & DISEASES - identification, treatment, prevention
+FERTILIZERS - recommendations, application, timing
+WEATHER CONDITIONS - current conditions, forecasts
+MARKET INFORMATION - prices, trends, opportunities
+
+What would you like to know about farming?
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="loading" id="loading">
+                    AgriBot is thinking...
+                </div>
+                
+                <div class="chat-input">
+                    <div class="input-group">
+                        <input type="text" id="messageInput" class="message-input" 
+                               placeholder="Ask me anything about agriculture in Cameroon..." 
+                               maxlength="500">
+                        <button id="sendBtn" class="send-btn">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let questionCount = 0;
+        let totalConfidence = 0;
+        let currentConversationId = null;
+
+        // DOM elements
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const loading = document.getElementById('loading');
+        const questionCountElement = document.getElementById('questionCount');
+        const avgConfidenceElement = document.getElementById('avgConfidence');
+
+        // Send message function
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            const userRegion = document.getElementById('userRegion').value;
+            const userRole = document.getElementById('userRole').value;
+            const userName = document.getElementById('userName').value || 'Anonymous';
+
+            // Add user message to chat
+            addUserMessage(message);
+            
+            // Clear input and show loading
+            messageInput.value = '';
+            sendBtn.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        message: message,
+                        region: userRegion,
+                        role: userRole,
+                        user_name: userName
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addBotMessage(data.response, data.intent, data.confidence, data.suggestions, data.conversation_id);
+                    updateStats(data.confidence);
+                } else {
+                    addBotMessage("Sorry, I encountered an error. Please try again.", "error", 0, []);
+                }
+
+            } catch (error) {
+                addBotMessage("Sorry, I'm having trouble connecting. Please try again.", "error", 0, []);
+            } finally {
+                loading.style.display = 'none';
+                sendBtn.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        // Add user message to chat
+        function addUserMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user-message';
+            messageDiv.innerHTML = `
+                <div class="message-bubble">${message}</div>
+                <div class="message-meta">${new Date().toLocaleTimeString()}</div>
+            `;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Add bot message to chat
+        function addBotMessage(response, intent, confidence, suggestions, conversationId) {
+            currentConversationId = conversationId;
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot-message';
+            messageDiv.id = `message-${conversationId}`;
+            
+            let suggestionHTML = '';
+            if (suggestions && suggestions.length > 0) {
+                suggestionHTML = `
+                    <div class="suggestions">
+                        <h4>You might also ask:</h4>
+                        ${suggestions.map(s => `<button class="suggestion-btn" onclick="askSuggestion('${s}')">${s}</button>`).join('')}
+                    </div>
+                `;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${response.replace(/\n/g, '<br>')}
+                    ${suggestionHTML}
+                </div>
+                <div class="message-meta">
+                    Intent: ${intent} | Confidence: ${Math.round(confidence * 100)}% | ${new Date().toLocaleTimeString()}
+                </div>
+                <div class="feedback-section" id="feedback-${conversationId}">
+                    <div><strong>Was this answer helpful?</strong></div>
+                    <div class="feedback-buttons">
+                        <button class="feedback-btn helpful" onclick="submitQuickFeedback(true, ${conversationId})">Yes, helpful</button>
+                        <button class="feedback-btn not-helpful" onclick="submitQuickFeedback(false, ${conversationId})">Not helpful</button>
+                        <button class="feedback-btn detailed" onclick="showDetailedFeedback(${conversationId})">Detailed Feedback</button>
+                    </div>
+                    
+                    <div class="feedback-form" id="detailed-feedback-${conversationId}">
+                        <h4>Detailed Feedback</h4>
+                        
+                        <div class="rating-group">
+                            <label>Overall Rating:</label>
+                            <div class="rating-stars" data-rating="overall-${conversationId}">
+                                <span class="star" data-value="1">★</span>
+                                <span class="star" data-value="2">★</span>
+                                <span class="star" data-value="3">★</span>
+                                <span class="star" data-value="4">★</span>
+                                <span class="star" data-value="5">★</span>
+                            </div>
+                        </div>
+                        
+                        <div class="rating-group">
+                            <label>Accuracy:</label>
+                            <div class="rating-stars" data-rating="accuracy-${conversationId}">
+                                <span class="star" data-value="1">★</span>
+                                <span class="star" data-value="2">★</span>
+                                <span class="star" data-value="3">★</span>
+                                <span class="star" data-value="4">★</span>
+                                <span class="star" data-value="5">★</span>
+                            </div>
+                        </div>
+                        
+                        <div class="rating-group">
+                            <label>Completeness:</label>
+                            <div class="rating-stars" data-rating="completeness-${conversationId}">
+                                <span class="star" data-value="1">★</span>
+                                <span class="star" data-value="2">★</span>
+                                <span class="star" data-value="3">★</span>
+                                <span class="star" data-value="4">★</span>
+                                <span class="star" data-value="5">★</span>
+                            </div>
+                        </div>
+                        
+                        <div class="rating-group">
+                            <label>Comments:</label>
+                            <textarea class="feedback-textarea" id="comment-${conversationId}" 
+                                placeholder="What did you think of this response? How could it be improved?"></textarea>
+                        </div>
+                        
+                        <div class="rating-group">
+                            <label>Suggestions for improvement:</label>
+                            <textarea class="feedback-textarea" id="improvement-${conversationId}" 
+                                placeholder="What specific improvements would make this response better?"></textarea>
+                        </div>
+                        
+                        <button class="feedback-submit" onclick="submitDetailedFeedback(${conversationId})">Submit Feedback</button>
+                        <button class="feedback-cancel" onclick="hideDetailedFeedback(${conversationId})">Cancel</button>
+                    </div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Initialize star rating functionality
+            initializeStarRatings(conversationId);
+        }
+
+        // Initialize star rating system
+        function initializeStarRatings(conversationId) {
+            const ratingGroups = document.querySelectorAll(`#message-${conversationId} .rating-stars`);
+            
+            ratingGroups.forEach(group => {
+                const stars = group.querySelectorAll('.star');
+                
+                stars.forEach((star, index) => {
+                    star.addEventListener('click', () => {
+                        const rating = parseInt(star.getAttribute('data-value'));
+                        group.setAttribute('data-selected', rating);
+                        
+                        // Update visual feedback
+                        stars.forEach((s, i) => {
+                            s.classList.toggle('active', i < rating);
+                        });
+                    });
+                    
+                    star.addEventListener('mouseenter', () => {
+                        const rating = parseInt(star.getAttribute('data-value'));
+                        stars.forEach((s, i) => {
+                            s.classList.toggle('active', i < rating);
+                        });
+                    });
+                });
+                
+                group.addEventListener('mouseleave', () => {
+                    const selected = parseInt(group.getAttribute('data-selected')) || 0;
+                    stars.forEach((s, i) => {
+                        s.classList.toggle('active', i < selected);
+                    });
+                });
+            });
+        }
+
+        // Ask suggestion
+        function askSuggestion(suggestion) {
+            messageInput.value = suggestion;
+            sendMessage();
+        }
+
+        // Quick feedback
+        async function submitQuickFeedback(helpful, conversationId) {
+            try {
+                await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        conversation_id: conversationId,
+                        helpful: helpful,
+                        rating: helpful ? 4 : 2,
+                        accuracy_rating: helpful ? 4 : 2,
+                        completeness_rating: helpful ? 4 : 2,
+                        clarity_rating: helpful ? 4 : 2
+                    })
+                });
+                
+                document.getElementById(`feedback-${conversationId}`).innerHTML = `
+                    <div style="color: #4CAF50; text-align: center; padding: 10px;">
+                        <strong>Thank you for your feedback!</strong>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Feedback error:', error);
+            }
+        }
+
+        // Show detailed feedback form
+        function showDetailedFeedback(conversationId) {
+            const form = document.getElementById(`detailed-feedback-${conversationId}`);
+            form.classList.add('active');
+        }
+
+        // Hide detailed feedback form
+        function hideDetailedFeedback(conversationId) {
+            const form = document.getElementById(`detailed-feedback-${conversationId}`);
+            form.classList.remove('active');
+        }
+
+        // Submit detailed feedback
+        async function submitDetailedFeedback(conversationId) {
+            try {
+                // Get ratings
+                const overallRating = parseInt(document.querySelector(`[data-rating="overall-${conversationId}"]`).getAttribute('data-selected')) || 3;
+                const accuracyRating = parseInt(document.querySelector(`[data-rating="accuracy-${conversationId}"]`).getAttribute('data-selected')) || 3;
+                const completenessRating = parseInt(document.querySelector(`[data-rating="completeness-${conversationId}"]`).getAttribute('data-selected')) || 3;
+                
+                // Get comments
+                const comment = document.getElementById(`comment-${conversationId}`).value.trim();
+                const improvement = document.getElementById(`improvement-${conversationId}`).value.trim();
+                
+                await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        conversation_id: conversationId,
+                        helpful: overallRating >= 4,
+                        rating: overallRating,
+                        accuracy_rating: accuracyRating,
+                        completeness_rating: completenessRating,
+                        clarity_rating: overallRating,
+                        comment: comment,
+                        improvement_suggestion: improvement,
+                        would_recommend: overallRating >= 4
+                    })
+                });
+                
+                document.getElementById(`feedback-${conversationId}`).innerHTML = `
+                    <div style="color: #4CAF50; text-align: center; padding: 15px;">
+                        <strong>Thank you for your detailed feedback!</strong><br>
+                        <small>Your input helps us improve AgriBot for all farmers.</small>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Detailed feedback error:', error);
+                alert('Error submitting feedback. Please try again.');
+            }
+        }
+
+        // Update stats
+        function updateStats(confidence) {
+            questionCount++;
+            totalConfidence += confidence;
+            
+            questionCountElement.textContent = questionCount;
+            avgConfidenceElement.textContent = Math.round((totalConfidence / questionCount) * 100) + '%';
+        }
+
+        // Event listeners
+        sendBtn.addEventListener('click', sendMessage);
+        
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Focus on input when page loads
+        window.onload = () => messageInput.focus();
+    </script>
+</body>
+</html>
