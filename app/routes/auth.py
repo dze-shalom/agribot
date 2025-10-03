@@ -142,13 +142,16 @@ def login():
         if not check_password_hash(user.password_hash, password):
             return jsonify({'error': 'Invalid credentials'}), 401
 
-        # Check account type matches (handle enum comparison)
-        if user.account_type.value != account_type:
+        # Check account type matches (handle both enum and string)
+        user_account_type = user.account_type.value if hasattr(user.account_type, 'value') else user.account_type
+        if user_account_type != account_type:
             return jsonify({'error': 'Invalid account type'}), 401
 
-        # Check if account is active (handle enum comparison)
-        if user.status.value != 'active':
-            return jsonify({'error': 'Account is not active'}), 401
+        # Check if account is active (handle both enum and string, default to active if no status)
+        if hasattr(user, 'status'):
+            user_status = user.status.value if hasattr(user.status, 'value') else user.status
+            if user_status != 'active':
+                return jsonify({'error': 'Account is not active'}), 401
         
         # Update last login
         User.update_last_login(user.id)
@@ -198,6 +201,7 @@ def login():
         })
         
     except Exception as e:
+        logger.error(f"Login error: {str(e)}")
         print(f"Exception in login: {str(e)}")
         import traceback
         traceback.print_exc()
@@ -1152,17 +1156,28 @@ def temp_check_admin():
         user = User.query.filter_by(email=email).first()
 
         if user:
+            # Get account type safely
+            account_type = user.account_type.value if hasattr(user.account_type, 'value') else user.account_type
+
+            # Get status safely
+            status = 'unknown'
+            if hasattr(user, 'status'):
+                status = user.status.value if hasattr(user.status, 'value') else user.status
+
             return jsonify({
                 'exists': True,
                 'name': user.name,
                 'email': user.email,
-                'account_type': user.account_type.value if hasattr(user.account_type, 'value') else user.account_type,
-                'has_password': bool(user.password_hash)
+                'account_type': account_type,
+                'status': status,
+                'has_password': bool(user.password_hash),
+                'password_hash_length': len(user.password_hash) if user.password_hash else 0
             })
         else:
             return jsonify({'exists': False, 'message': f'No user found with email: {email}'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
 
 @auth_bp.route('/temp-reset-password', methods=['POST'])
 def temp_reset_password():
