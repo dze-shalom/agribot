@@ -1144,6 +1144,26 @@ def get_recent_activity():
         print(f"Error fetching recent activity: {str(e)}")
         return jsonify({'error': 'Failed to fetch activity', 'details': str(e)}), 500
 
+@auth_bp.route('/temp-check-admin', methods=['GET'])
+def temp_check_admin():
+    """TEMPORARY: Check if admin exists"""
+    try:
+        email = request.args.get('email', 'shalom.dze-kum@aims-cameroon.org')
+        user = User.query.filter_by(email=email).first()
+
+        if user:
+            return jsonify({
+                'exists': True,
+                'name': user.name,
+                'email': user.email,
+                'account_type': user.account_type.value if hasattr(user.account_type, 'value') else user.account_type,
+                'has_password': bool(user.password_hash)
+            })
+        else:
+            return jsonify({'exists': False, 'message': f'No user found with email: {email}'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @auth_bp.route('/temp-reset-password', methods=['POST'])
 def temp_reset_password():
     """
