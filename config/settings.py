@@ -79,20 +79,25 @@ class AppConfig:
 
 class ProductionConfig(AppConfig):
     """Production environment with PostgreSQL and security hardening"""
-    def __init__(self):
-        super().__init__()
-        self.debug = False
-        # In production, DATABASE_URL MUST be set - fail fast if not
-        db_url = os.getenv('DATABASE_URL')
-        if not db_url:
-            raise ValueError("DATABASE_URL environment variable is required for production")
-        self.database = DatabaseConfig(url=db_url)
+    debug: bool = False
+    database: DatabaseConfig = DatabaseConfig(
+        url=os.getenv('DATABASE_URL', 'postgresql://user:pass@localhost/agribot')
+    )
 
 def get_config(env_name: str = None) -> AppConfig:
     """Factory function to get appropriate configuration based on environment"""
     env = env_name or os.getenv('FLASK_ENV', 'development')
-    
+
+    # Force production if DATABASE_URL is a PostgreSQL URL (from Render)
+    database_url = os.getenv('DATABASE_URL', '')
+    if 'postgresql' in database_url or 'postgres' in database_url:
+        env = 'production'
+
     if env == 'production':
-        return ProductionConfig()
+        config = ProductionConfig()
+        print(f"🚀 Production config loaded - Database: {config.database.url[:50]}...")
+        return config
     else:
-        return AppConfig()
+        config = AppConfig()
+        print(f"🔧 Development config loaded - Database: {config.database.url[:50]}...")
+        return config
