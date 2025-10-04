@@ -100,12 +100,12 @@ def submit_feedback():
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No feedback data provided'}), 400
-        
+
         # Get user session
         user_id = session.get('user_id')
         if not user_id:
             return jsonify({'error': 'No active session'}), 400
-        
+
         # Extract feedback data
         helpful = data.get('helpful')  # Boolean
         overall_rating = data.get('overall_rating')  # 1-5
@@ -114,6 +114,18 @@ def submit_feedback():
         comment = data.get('comment', '').strip()
         improvement_suggestion = data.get('improvement_suggestion', '').strip()
         conversation_id = data.get('conversation_id')
+
+        # Validate conversation_id is an integer
+        if conversation_id:
+            # Check if it's a fake session ID (starts with 'session_')
+            if isinstance(conversation_id, str) and conversation_id.startswith('session_'):
+                return jsonify({'error': 'Invalid conversation ID - please send a message first'}), 400
+
+            # Try to convert to integer
+            try:
+                conversation_id = int(conversation_id)
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Invalid conversation ID format'}), 400
         
         # Validate ratings
         for rating_name, rating_value in [
