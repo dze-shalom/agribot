@@ -712,7 +712,7 @@ def export_ml_dataset():
         feedback_by_conv = {}
         feedback_by_user = {}
         for fb in all_feedback:
-            # Group feedback by conversation_id (which is the session_id from frontend)
+            # Group feedback by conversation_id (integer database ID)
             if fb.conversation_id not in feedback_by_conv:
                 feedback_by_conv[fb.conversation_id] = []
             feedback_by_conv[fb.conversation_id].append(fb)
@@ -729,16 +729,16 @@ def export_ml_dataset():
             conv = msg.conversation
 
             # Get feedback for this conversation if available
-            # Strategy 1: Try to match by conversation's session_id to feedback's conversation_id
+            # Strategy 1: Try to match by conversation's database ID to feedback's conversation_id
             # Strategy 2: Fallback to matching by user_id
             feedback = None
-            if conv and conv.session_id and conv.session_id in feedback_by_conv:
-                # Get the most recent feedback for this session
-                session_feedbacks = feedback_by_conv[conv.session_id]
-                if session_feedbacks:
+            if conv and conv.id and conv.id in feedback_by_conv:
+                # Get the most recent feedback for this conversation
+                conv_feedbacks = feedback_by_conv[conv.id]
+                if conv_feedbacks:
                     # Sort by timestamp and get the most recent
-                    session_feedbacks.sort(key=lambda f: f.timestamp if f.timestamp else datetime.min, reverse=True)
-                    feedback = session_feedbacks[0]
+                    conv_feedbacks.sort(key=lambda f: f.timestamp if f.timestamp else datetime.min, reverse=True)
+                    feedback = conv_feedbacks[0]
             elif conv and conv.user_id and conv.user_id in feedback_by_user:
                 # Fallback: Get feedback by user_id if session_id doesn't match
                 user_feedbacks = feedback_by_user[conv.user_id]
