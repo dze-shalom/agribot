@@ -933,8 +933,102 @@
             const regionSelect = document.getElementById('registerRegion');
             const regionOther = document.getElementById('registerRegionOther');
 
-            if (country === 'Cameroon') {
-                // Show Cameroon regions dropdown
+            // Region data for each country
+            const regionsByCountry = {
+                'Cameroon': [
+                    { value: 'centre', label: 'Centre (Yaoundé)' },
+                    { value: 'littoral', label: 'Littoral (Douala)' },
+                    { value: 'west', label: 'West (Bafoussam)' },
+                    { value: 'northwest', label: 'Northwest (Bamenda)' },
+                    { value: 'southwest', label: 'Southwest (Buea)' },
+                    { value: 'north', label: 'North (Garoua)' },
+                    { value: 'adamawa', label: 'Adamawa (Ngaoundéré)' },
+                    { value: 'east', label: 'East (Bertoua)' },
+                    { value: 'south', label: 'South (Ebolowa)' },
+                    { value: 'far-north', label: 'Far North (Maroua)' }
+                ],
+                'Nigeria': [
+                    { value: 'lagos', label: 'Lagos' },
+                    { value: 'kano', label: 'Kano' },
+                    { value: 'oyo', label: 'Oyo (Ibadan)' },
+                    { value: 'rivers', label: 'Rivers (Port Harcourt)' },
+                    { value: 'kaduna', label: 'Kaduna' },
+                    { value: 'abuja', label: 'Abuja (FCT)' },
+                    { value: 'ogun', label: 'Ogun' },
+                    { value: 'delta', label: 'Delta' },
+                    { value: 'edo', label: 'Edo (Benin City)' },
+                    { value: 'enugu', label: 'Enugu' }
+                ],
+                'Kenya': [
+                    { value: 'nairobi', label: 'Nairobi' },
+                    { value: 'mombasa', label: 'Mombasa' },
+                    { value: 'kisumu', label: 'Kisumu' },
+                    { value: 'nakuru', label: 'Nakuru' },
+                    { value: 'eldoret', label: 'Eldoret (Uasin Gishu)' },
+                    { value: 'kiambu', label: 'Kiambu' },
+                    { value: 'kakamega', label: 'Kakamega' },
+                    { value: 'machakos', label: 'Machakos' }
+                ],
+                'Ghana': [
+                    { value: 'greater-accra', label: 'Greater Accra' },
+                    { value: 'ashanti', label: 'Ashanti (Kumasi)' },
+                    { value: 'western', label: 'Western' },
+                    { value: 'central', label: 'Central' },
+                    { value: 'volta', label: 'Volta' },
+                    { value: 'eastern', label: 'Eastern' },
+                    { value: 'northern', label: 'Northern' },
+                    { value: 'brong-ahafo', label: 'Brong-Ahafo' }
+                ],
+                'Uganda': [
+                    { value: 'kampala', label: 'Kampala' },
+                    { value: 'wakiso', label: 'Wakiso' },
+                    { value: 'mukono', label: 'Mukono' },
+                    { value: 'gulu', label: 'Gulu' },
+                    { value: 'lira', label: 'Lira' },
+                    { value: 'mbarara', label: 'Mbarara' },
+                    { value: 'jinja', label: 'Jinja' },
+                    { value: 'mbale', label: 'Mbale' }
+                ],
+                'Tanzania': [
+                    { value: 'dar-es-salaam', label: 'Dar es Salaam' },
+                    { value: 'mwanza', label: 'Mwanza' },
+                    { value: 'arusha', label: 'Arusha' },
+                    { value: 'dodoma', label: 'Dodoma' },
+                    { value: 'mbeya', label: 'Mbeya' },
+                    { value: 'morogoro', label: 'Morogoro' },
+                    { value: 'tanga', label: 'Tanga' },
+                    { value: 'zanzibar', label: 'Zanzibar' }
+                ],
+                'South Africa': [
+                    { value: 'gauteng', label: 'Gauteng (Johannesburg)' },
+                    { value: 'western-cape', label: 'Western Cape (Cape Town)' },
+                    { value: 'kwazulu-natal', label: 'KwaZulu-Natal (Durban)' },
+                    { value: 'eastern-cape', label: 'Eastern Cape' },
+                    { value: 'limpopo', label: 'Limpopo' },
+                    { value: 'mpumalanga', label: 'Mpumalanga' },
+                    { value: 'north-west', label: 'North West' },
+                    { value: 'free-state', label: 'Free State' },
+                    { value: 'northern-cape', label: 'Northern Cape' }
+                ],
+                'Ethiopia': [
+                    { value: 'addis-ababa', label: 'Addis Ababa' },
+                    { value: 'oromia', label: 'Oromia' },
+                    { value: 'amhara', label: 'Amhara' },
+                    { value: 'tigray', label: 'Tigray' },
+                    { value: 'somali', label: 'Somali' },
+                    { value: 'sidama', label: 'Sidama' },
+                    { value: 'snnpr', label: 'Southern Nations' }
+                ]
+            };
+
+            // Check if country has predefined regions
+            if (regionsByCountry[country]) {
+                // Show dropdown with country-specific regions
+                regionSelect.innerHTML = '<option value="">Select your region</option>';
+                regionsByCountry[country].forEach(region => {
+                    regionSelect.innerHTML += `<option value="${region.value}">${region.label}</option>`;
+                });
+
                 regionSelect.style.display = 'block';
                 regionOther.style.display = 'none';
                 regionOther.removeAttribute('required');
