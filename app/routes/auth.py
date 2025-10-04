@@ -1179,6 +1179,76 @@ def temp_check_admin():
         import traceback
         return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
 
+@auth_bp.route('/temp-test-login', methods=['POST'])
+def temp_test_login():
+    """TEMPORARY: Debug login process step by step"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').lower().strip()
+        password = data.get('password', '')
+        account_type = data.get('account_type', 'user')
+
+        debug_info = {
+            'step': '',
+            'email': email,
+            'account_type_requested': account_type
+        }
+
+        # Step 1: Find user
+        debug_info['step'] = 'Finding user'
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            debug_info['result'] = 'User not found'
+            return jsonify(debug_info), 404
+
+        debug_info['user_found'] = True
+        debug_info['user_id'] = user.id
+        debug_info['user_name'] = user.name
+
+        # Step 2: Check password
+        debug_info['step'] = 'Checking password'
+        debug_info['has_password_hash'] = bool(user.password_hash)
+        password_valid = check_password_hash(user.password_hash, password)
+        debug_info['password_valid'] = password_valid
+
+        if not password_valid:
+            debug_info['result'] = 'Invalid password'
+            return jsonify(debug_info), 401
+
+        # Step 3: Check account type
+        debug_info['step'] = 'Checking account type'
+        user_account_type = user.account_type.value if hasattr(user.account_type, 'value') else user.account_type
+        debug_info['user_account_type'] = user_account_type
+        debug_info['account_type_match'] = (user_account_type == account_type)
+
+        if user_account_type != account_type:
+            debug_info['result'] = 'Account type mismatch'
+            return jsonify(debug_info), 401
+
+        # Step 4: Check status
+        debug_info['step'] = 'Checking status'
+        if hasattr(user, 'status'):
+            user_status = user.status.value if hasattr(user.status, 'value') else user.status
+            debug_info['user_status'] = user_status
+            debug_info['status_active'] = (user_status == 'active')
+
+            if user_status != 'active':
+                debug_info['result'] = 'Account not active'
+                return jsonify(debug_info), 401
+        else:
+            debug_info['user_status'] = 'no status field'
+
+        debug_info['result'] = 'All checks passed - login should work'
+        return jsonify(debug_info), 200
+
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
 @auth_bp.route('/temp-reset-password', methods=['POST'])
 def temp_reset_password():
     """
