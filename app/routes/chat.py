@@ -526,11 +526,12 @@ def message_with_image():
         # Get or create conversation (one per session until user clicks "New Chat")
         conversation_repo = ConversationRepository()
         conversation_id = session.get('conversation_id')
+        conversation = None
 
         if conversation_id:
             conversation = conversation_repo.get_by_id(conversation_id)
 
-        if not conversation_id or not conversation:
+        if not conversation:
             conversation = conversation_repo.create_conversation(
                 user_id=user_id,
                 region=user_region
