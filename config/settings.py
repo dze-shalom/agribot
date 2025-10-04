@@ -84,14 +84,14 @@ class ProductionConfig(AppConfig):
         self.debug = False
         # Read DATABASE_URL at runtime, not at class definition time
         db_url = os.getenv('DATABASE_URL')
-        print(f"🔍 DATABASE_URL from environment: {db_url[:80] if db_url else 'NOT SET'}...")
+        print(f"[*] DATABASE_URL from environment: {db_url[:80] if db_url else 'NOT SET'}...")
         if db_url:
             self.database = DatabaseConfig(url=db_url)
-            print(f"✅ Using PostgreSQL: {db_url[:60]}...")
+            print(f"[OK] Using PostgreSQL: {db_url[:60]}...")
         else:
             # Fallback for testing
             self.database = DatabaseConfig(url='postgresql://user:pass@localhost/agribot')
-            print("⚠️ DATABASE_URL not found, using fallback localhost")
+            print("[WARN] DATABASE_URL not found, using fallback localhost")
 
 def get_config(env_name: str = None) -> AppConfig:
     """Factory function to get appropriate configuration based on environment"""
@@ -104,9 +104,9 @@ def get_config(env_name: str = None) -> AppConfig:
 
     if env == 'production':
         config = ProductionConfig()
-        print(f"🚀 Production config loaded - Database: {config.database.url[:50]}...")
+        print(f"[PROD] Production config loaded - Database: {config.database.url[:50]}...")
         return config
     else:
         config = AppConfig()
-        print(f"🔧 Development config loaded - Database: {config.database.url[:50]}...")
+        print(f"[DEV] Development config loaded - Database: {config.database.url[:50]}...")
         return config
