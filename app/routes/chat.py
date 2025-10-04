@@ -47,10 +47,15 @@ def process_message():
         include_external_data = data.get('include_external_data', True)
 
         # Get or create user session
-        if 'user_id' not in session:
-            session['user_id'] = str(uuid.uuid4())
-
-        user_id = session['user_id']
+        # If logged in, use authenticated user_id, otherwise use session UUID
+        if 'user_id' in session:
+            # Logged in user - use their database ID
+            user_id = session['user_id']
+        else:
+            # Anonymous user - create session UUID
+            # Note: Conversations for anonymous users won't persist
+            user_id = str(uuid.uuid4())
+            session['user_id'] = user_id
 
         # Get AgriBot engine from app context
         agribot_engine = current_app.agribot

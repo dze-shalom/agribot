@@ -2112,7 +2112,10 @@
         async function clearConversation() {
             if (confirm('Start a new conversation? This will clear our chat history and AI context.')) {
                 try {
-                    await fetch('/api/clear-conversation', { method: 'POST' });
+                    // End current conversation if exists
+                    if (conversationId) {
+                        await fetch('/chat/conversation/end', { method: 'POST' });
+                    }
 
                     // Reset UI
                     messagesContainer.innerHTML = `
@@ -2132,7 +2135,7 @@
                     cropsDiscussedEl.textContent = 'None';
                     document.getElementById('avgConfidence').textContent = '-';
                     document.getElementById('conversationSentiment').textContent = 'Neutral';
-                    updateSessionInfo('New enhanced conversation ready');
+                    updateSessionInfo('New conversation ready');
 
                     // Reload conversation history
                     loadConversationHistory();
