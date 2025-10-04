@@ -246,10 +246,12 @@ class AgriBotEngine:
             return final_response
             
         except Exception as e:
-            # Log error
+            # Log error with full traceback
+            import traceback
             self.logger.error(f"Error processing message for user {user_id}: {str(e)}")
+            self.logger.error(f"Full traceback: {traceback.format_exc()}")
             self._log_error(e, user_id, message)
-            
+
             # Return error response
             return self._create_error_response(str(e), user_id)
     
