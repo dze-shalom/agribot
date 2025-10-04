@@ -1249,6 +1249,59 @@ def temp_test_login():
             'traceback': traceback.format_exc()
         }), 500
 
+@auth_bp.route('/temp-create-admin-now', methods=['GET'])
+def temp_create_admin_now():
+    """EMERGENCY: Create admin account instantly via URL"""
+    try:
+        # Get params from URL
+        email = request.args.get('email')
+        password = request.args.get('password')
+        name = request.args.get('name', 'Admin')
+        secret = request.args.get('secret')
+
+        # Security check
+        if secret != 'AGRIBOT_TEMP_RESET_2024':
+            return jsonify({'error': 'Invalid secret key'}), 403
+
+        if not email or not password:
+            return jsonify({'error': 'Email and password required in URL params'}), 400
+
+        # Check if exists
+        existing = User.query.filter_by(email=email).first()
+        if existing:
+            return jsonify({'error': f'User {email} already exists!', 'user_id': existing.id}), 400
+
+        # Create admin
+        from database.models.user import AccountType
+        admin = User(
+            name=name,
+            email=email,
+            phone=None,
+            country='Cameroon',
+            region='centre',
+            account_type=AccountType.ADMIN,
+            password_hash=generate_password_hash(password),
+            created_at=datetime.now(timezone.utc)
+        )
+        db.session.add(admin)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Admin created successfully!',
+            'user': {
+                'id': admin.id,
+                'name': admin.name,
+                'email': admin.email,
+                'account_type': admin.account_type.value if hasattr(admin.account_type, 'value') else admin.account_type
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
+
 @auth_bp.route('/temp-reset-password', methods=['POST'])
 def temp_reset_password():
     """
