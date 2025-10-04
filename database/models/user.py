@@ -165,24 +165,46 @@ class User(db.Model):
         user = cls.get_by_id(user_id)
         if not user:
             return False
-        
-        for key, value in update_data.items():
-            if hasattr(user, key):
-                if key == 'region' and isinstance(value, str):
-                    value = CameroonRegion(value)
-                elif key == 'account_type' and isinstance(value, str):
-                    value = AccountType(value)
-                elif key == 'status' and isinstance(value, str):
-                    value = UserStatus(value)
-                setattr(user, key, value)
-        
-        db.session.commit()
-        return True
+
+        try:
+            for key, value in update_data.items():
+                if hasattr(user, key):
+                    # Don't try to convert enums if the value is already correct type
+                    if key == 'region' and isinstance(value, str):
+                        try:
+                            value = CameroonRegion(value)
+                        except:
+                            pass  # Keep as string if enum conversion fails
+                    elif key == 'account_type' and isinstance(value, str):
+                        try:
+                            value = AccountType(value)
+                        except:
+                            pass
+                    elif key == 'status' and isinstance(value, str):
+                        try:
+                            value = UserStatus(value)
+                        except:
+                            pass
+                    setattr(user, key, value)
+
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating user {user_id}: {str(e)}")
+            return False
     
     @classmethod
     def update_last_login(cls, user_id: int):
         """Update last login timestamp"""
-        cls.update(user_id, {'last_login': datetime.now(timezone.utc)})
+        try:
+            user = cls.get_by_id(user_id)
+            if user:
+                user.last_login = datetime.now(timezone.utc)
+                db.session.commit()
+        except Exception as e:
+            print(f"Error updating last login for user {user_id}: {str(e)}")
+            db.session.rollback()
     
     @classmethod
     def count_total(cls):
