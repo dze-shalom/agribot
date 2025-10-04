@@ -57,18 +57,18 @@ class ConversationManager:
         self.max_context_history = 10
         self.session_timeout_minutes = 120
     
-    def get_conversation_state(self, user_id: str, user_name: str = 'Friend', 
+    def get_conversation_state(self, user_id: str, user_name: str = 'Friend',
                               user_region: str = 'centre') -> ConversationState:
-        """Get or create conversation state for user"""
+        """Get or create conversation state for user - one conversation per session"""
         # Check if user has active conversation
         if user_id in self.active_conversations:
             state = self.active_conversations[user_id]
-            
+
             # Check if session has timed out
             if self._is_session_expired(state):
                 self._end_conversation_session(user_id)
                 return self._create_new_conversation_state(user_id, user_name, user_region)
-            
+
             return state
         else:
             return self._create_new_conversation_state(user_id, user_name, user_region)

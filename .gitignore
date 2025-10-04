@@ -64,7 +64,9 @@ venv.bak/
 
 # Database
 *.db
+*.db-journal
 *.sqlite3
+instance/
 migrations/versions/*
 
 # Logs

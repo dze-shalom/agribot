@@ -27,14 +27,11 @@ def init_db(app):
     # Initialize Flask-Migrate
     migrate.init_app(app, db)
 
-    # IMPORTANT: Only create tables in development, NOT production
-    # In production, use Flask-Migrate (flask db upgrade) instead
-    if app.config.get('ENV') != 'production':
-        with app.app_context():
-            db.create_all()
-            app.logger.info("Database tables created (development mode)")
-    else:
-        app.logger.info("Production mode - skipping db.create_all()")
+    # Create tables if they don't exist
+    # This is safe for both development and production
+    with app.app_context():
+        db.create_all()
+        app.logger.info(f"Database tables created/verified ({app.config.get('ENV', 'development')} mode)")
 
     return db
 

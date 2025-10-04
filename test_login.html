@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Login Debug Tool</h1>
+
+        <form id="debugForm">
+            <div class="form-group">
+                <label>Render URL:</label>
+                <input type="text" id="baseUrl" placeholder="https://your-app.onrender.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" placeholder="your-email@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="password" placeholder="Your password" required>
+            </div>
+
+            <div class="form-group">
+                <label>Account Type:</label>
+                <select id="accountType" required>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
+            <button type="submit" id="testBtn">🔍 Test Login (Debug)</button>
+            <button type="button" id="realLoginBtn">🚀 Try Real Login</button>
+        </form>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('debugForm');
+        const resultDiv = document.getElementById('result');
+        const testBtn = document.getElementById('testBtn');
+        const realLoginBtn = document.getElementById('realLoginBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const accountType = document.getElementById('accountType').value;
+
+            testBtn.disabled = true;
+            testBtn.textContent = 'Testing...';
+
+            try {
+                const response = await fetch(`${baseUrl}/api/auth/temp-test-login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        account_type: accountType
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.result === 'All checks passed - login should work') {
+                    showResult(JSON.stringify(data, null, 2), 'success');
+                } else if (response.status === 404) {
+                    showResult(`❌ User not found!\n\n${JSON.stringify(data, null, 2)}`, 'error');
+                } else if (response.status === 401) {
+                    showResult(`❌ Login failed!\n\n${JSON.stringify(data, null, 2)}`, 'error');
+                } else {
+                    showResult(`Debug Info:\n${JSON.stringify(data, null, 2)}`, 'info');
+                }
+            } catch (error) {
+                showResult(`❌ Network Error: ${error.message}`, 'error');
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = '🔍 Test Login (Debug)';
+            }
+        });
+
+        realLoginBtn.addEventListener('click', async () => {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const accountType = document.getElementById('accountType').value;
+
+            if (!baseUrl || !email || !password) {
+                showResult('Please fill in all fields', 'error');
+                return;
+            }
+
+            realLoginBtn.disabled = true;
+            realLoginBtn.textContent = 'Logging in...';
+
+            try {
+                const response = await fetch(`${baseUrl}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        account_type: accountType
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showResult(`✅ Login Successful!\n\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    showResult(`❌ Login Failed!\n\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Network Error: ${error.message}`, 'error');
+            } finally {
+                realLoginBtn.disabled = false;
+                realLoginBtn.textContent = '🚀 Try Real Login';
+            }
+        });
+
+        function showResult(message, type) {
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

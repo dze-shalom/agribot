@@ -2112,16 +2112,23 @@
         async function clearConversation() {
             if (confirm('Start a new conversation? This will clear our chat history and AI context.')) {
                 try {
-                    // End current conversation if exists
-                    if (conversationId) {
-                        await fetch('/chat/conversation/end', { method: 'POST' });
+                    // Call the new conversation endpoint
+                    const response = await fetch('/chat/conversation/new', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    const result = await response.json();
+
+                    if (!result.success) {
+                        throw new Error(result.error || 'Failed to start new conversation');
                     }
 
                     // Reset UI
                     messagesContainer.innerHTML = `
                         <div class="welcome-message">
-                            <h3>New Enhanced Conversation Started!</h3>
-                            <p>I'm ready with a fresh AI context to help with your farming questions. What would you like to know?</p>
+                            <h3>New Conversation Started!</h3>
+                            <p>I'm ready with a fresh context to help with your farming questions. What would you like to know?</p>
                         </div>
                     `;
 

@@ -14,7 +14,7 @@ from typing import Optional
 @dataclass
 class DatabaseConfig:
     """Database connection and behavior configuration"""
-    url: str = os.getenv('DATABASE_URL', 'sqlite:///agribot.db')
+    url: str = os.getenv('DATABASE_URL', 'sqlite:///instance/agribot.db')
     track_modifications: bool = False
     echo: bool = os.getenv('FLASK_ENV') == 'development'
     pool_size: int = 10

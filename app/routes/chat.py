@@ -184,27 +184,60 @@ def end_conversation():
         user_id = session.get('user_id')
         if not user_id:
             return jsonify({'error': 'No active session'}), 400
-        
+
         # Get AgriBot engine
         agribot_engine = current_app.agribot
-        
+
         # End conversation
         result = agribot_engine.end_user_conversation(user_id)
-        
+
         # Clear session
         session.pop('user_id', None)
-        
+
         return jsonify({
             'success': True,
             'data': result,
             'message': 'Conversation ended successfully'
         })
-        
+
     except Exception as e:
         logger.error(f"Error ending conversation: {str(e)}")
         return jsonify({
             'success': False,
             'error': 'Failed to end conversation'
+        }), 500
+
+@chat_bp.route('/conversation/new', methods=['POST'])
+def new_conversation():
+    """Start a new conversation (user clicks 'New Chat' button)"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'No active session'}), 400
+
+        # Clear the current conversation from session
+        # This forces creation of a new conversation on next message
+        session.pop('conversation_id', None)
+
+        # Also end the conversation in memory (ConversationManager)
+        try:
+            agribot_engine = current_app.agribot
+            agribot_engine.conversation_manager._end_conversation_session(user_id)
+        except:
+            pass  # Ignore if conversation doesn't exist
+
+        logger.info(f"New conversation started for user {user_id}")
+
+        return jsonify({
+            'success': True,
+            'message': 'New conversation started. Your next message will create a fresh conversation.'
+        })
+
+    except Exception as e:
+        logger.error(f"Error starting new conversation: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to start new conversation'
         }), 500
 
 @chat_bp.route('/suggestions', methods=['GET'])
@@ -490,13 +523,14 @@ def message_with_image():
         # Format response
         response_text = plant_service.format_response_text(health_data)
 
-        # Get or create conversation
+        # Get or create conversation (one per session until user clicks "New Chat")
         conversation_repo = ConversationRepository()
         conversation_id = session.get('conversation_id')
 
         if conversation_id:
             conversation = conversation_repo.get_by_id(conversation_id)
-        else:
+
+        if not conversation_id or not conversation:
             conversation = conversation_repo.create_conversation(
                 user_id=user_id,
                 region=user_region
@@ -604,7 +638,7 @@ def analyze_image():
         language = request.form.get('language', 'auto')
         user_message_text = request.form.get('message', '').strip()
 
-        # Get or create conversation
+        # Get or create conversation (one per session until user clicks "New Chat")
         conversation_id = session.get('conversation_id')
         conversation = None
         if conversation_id:
@@ -718,6 +752,66 @@ def analyze_image():
             'success': False,
             'error': 'Failed to analyze image'
         }), 500
+
+@chat_bp.route('/message/stream', methods=['POST'])
+def process_message_stream():
+    """Process user message with streaming response (can be cancelled)"""
+    try:
+        from flask import Response, stream_with_context
+
+        # Get request data
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        message = data.get('message', '').strip()
+        user_name = data.get('user_name', 'Friend')
+        user_region = data.get('user_region', 'centre').lower()
+        language = data.get('language', 'en')
+
+        if 'user_id' in session:
+            user_id = session['user_id']
+        else:
+            user_id = str(uuid.uuid4())
+            session['user_id'] = user_id
+
+        # Get AgriBot engine
+        agribot_engine = current_app.agribot
+
+        def generate():
+            """Generator function for streaming response"""
+            try:
+                # Process with streaming
+                response_stream = agribot_engine.process_message_stream(
+                    message=message,
+                    user_id=user_id,
+                    user_name=user_name,
+                    user_region=user_region,
+                    language=language
+                )
+
+                # Stream chunks to client
+                for chunk in response_stream:
+                    yield f"data: {chunk}\n\n"
+
+                yield "data: [DONE]\n\n"
+
+            except Exception as e:
+                logger.error(f"Streaming error: {str(e)}")
+                yield f"data: {{\"error\": \"{str(e)}\"}}\n\n"
+
+        return Response(
+            stream_with_context(generate()),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'X-Accel-Buffering': 'no'
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Streaming setup error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @chat_bp.route('/health', methods=['GET'])
 def chat_health():

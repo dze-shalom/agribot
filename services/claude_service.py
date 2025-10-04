@@ -152,7 +152,8 @@ Remember: You're helping real farmers make important decisions about their crops
         user_context: Optional[Dict[str, Any]] = None,
         weather_data: Optional[Dict[str, Any]] = None,
         market_data: Optional[Dict[str, Any]] = None,
-        language: str = 'auto'
+        language: str = 'auto',
+        stream: bool = False
     ) -> ClaudeResponse:
         """
         Get intelligent response from Claude with full agricultural context
@@ -205,17 +206,28 @@ Remember: You're helping real farmers make important decisions about their crops
             # Build language-specific system prompt with detected language
             system_prompt = self._build_system_prompt(detected_language)
 
-            # Call Claude API (using Haiku for cost-effectiveness)
-            response = self.client.messages.create(
-                model="claude-3-haiku-20240307",  # Use Haiku model (available on your API key)
-                max_tokens=1000,
-                temperature=0.7,
-                system=system_prompt,
-                messages=messages
-            )
+            # Call Claude API with streaming support if requested
+            if stream:
+                # Return streaming response (generator)
+                return self.client.messages.stream(
+                    model="claude-3-haiku-20240307",
+                    max_tokens=1000,
+                    temperature=0.7,
+                    system=system_prompt,
+                    messages=messages
+                )
+            else:
+                # Regular blocking response
+                response = self.client.messages.create(
+                    model="claude-3-haiku-20240307",
+                    max_tokens=1000,
+                    temperature=0.7,
+                    system=system_prompt,
+                    messages=messages
+                )
 
-            # Extract response content
-            response_content = response.content[0].text
+                # Extract response content
+                response_content = response.content[0].text
 
             # Calculate processing time
             processing_time = (datetime.now() - start_time).total_seconds()
