@@ -6,6 +6,7 @@ Initializes the database package and provides setup functions
 for database initialization and configuration.
 """
 
+import os
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
@@ -31,7 +32,10 @@ def init_db(app):
     # This is safe for both development and production
     with app.app_context():
         db.create_all()
-        app.logger.info(f"Database tables created/verified ({app.config.get('ENV', 'development')} mode)")
+        env = os.environ.get('FLASK_ENV', app.config.get('ENV', 'development'))
+        db_url = app.config.get('SQLALCHEMY_DATABASE_URI', 'unknown')
+        db_type = 'PostgreSQL' if 'postgresql' in db_url else 'SQLite'
+        app.logger.info(f"Database tables created/verified - {db_type} ({env} mode)")
 
     return db
 
