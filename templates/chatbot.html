@@ -68,7 +68,7 @@
             width: 280px;
             background: var(--sidebar-bg);
             border-right: 1px solid var(--border-color);
-            padding: 25px 20px 90px 20px; /* Extra bottom padding for fixed button */
+            padding: 25px 20px;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
@@ -418,11 +418,9 @@
         }
 
         .clear-btn {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: calc(280px - 40px); /* sidebar width minus padding */
+            width: 100%;
             padding: 12px;
+            margin-top: 20px;
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             border: none;
@@ -432,7 +430,6 @@
             font-weight: 600;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
             transition: all 0.3s ease;
-            z-index: 100;
         }
 
         .clear-btn:hover {
