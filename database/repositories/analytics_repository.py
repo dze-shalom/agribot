@@ -8,6 +8,7 @@ Handles feedback collection, usage analytics, and error logging.
 
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta, date
+import json
 from database.models.analytics import Feedback, UsageAnalytics, ErrorLog, db
 from database.models.conversation import Conversation, Message
 from database.models.user import User
@@ -413,7 +414,6 @@ class AnalyticsRepository:
                 for conv_id, mentioned_crops in conversations:
                     if mentioned_crops:
                         try:
-                            import json
                             crops = json.loads(mentioned_crops)
                             for crop in crops:
                                 crop_name = crop.lower().capitalize()
