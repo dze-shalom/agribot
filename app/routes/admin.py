@@ -67,7 +67,9 @@ def get_detailed_analytics():
         })
         
     except Exception as e:
+        import traceback
         logger.error(f"Error getting detailed analytics: {str(e)}")
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': 'Failed to retrieve detailed analytics'
