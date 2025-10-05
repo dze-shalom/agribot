@@ -270,12 +270,12 @@ class ConversationManager:
             confidence=confidence_score
         )
         
-        # Update conversation context with crops and livestock
+        # Update conversation context with crops (livestock disabled until migration runs)
         self.conversation_repo.update_conversation_context(
             state.conversation_id,
             state.current_topic,
-            state.mentioned_crops,
-            state.mentioned_livestock
+            state.mentioned_crops
+            # TODO: Re-enable livestock after running migration: state.mentioned_livestock
         )
     
     def _load_user_preferences(self, user) -> Dict[str, Any]:

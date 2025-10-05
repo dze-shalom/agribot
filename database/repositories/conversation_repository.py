@@ -106,8 +106,12 @@ class ConversationRepository:
             if crops is not None:
                 conversation.set_mentioned_crops(crops)
 
-            if livestock is not None:
-                conversation.set_mentioned_livestock(livestock)
+            # Only update livestock if the column exists (after migration)
+            if livestock is not None and hasattr(conversation, 'mentioned_livestock'):
+                try:
+                    conversation.set_mentioned_livestock(livestock)
+                except Exception:
+                    pass  # Silently ignore if column doesn't exist yet
 
             if title:
                 conversation.title = title

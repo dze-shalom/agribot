@@ -29,7 +29,7 @@ class Conversation(db.Model):
     title = db.Column(db.String(200), default='New Conversation')
     current_topic = db.Column(db.String(100), default='general')
     mentioned_crops = db.Column(db.Text)  # JSON array of crops discussed
-    mentioned_livestock = db.Column(db.Text)  # JSON array of livestock discussed
+    mentioned_livestock = db.Column(db.Text, nullable=True)  # JSON array of livestock discussed
     region = db.Column(db.String(50))
     
     # Conversation metrics
