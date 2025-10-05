@@ -21,6 +21,7 @@ class ConversationState:
     conversation_id: Optional[int] = None
     current_topic: str = 'general'
     mentioned_crops: List[str] = field(default_factory=list)
+    mentioned_livestock: List[str] = field(default_factory=list)
     mentioned_regions: List[str] = field(default_factory=list)
     mentioned_diseases: List[str] = field(default_factory=list)
     mentioned_pests: List[str] = field(default_factory=list)
@@ -187,7 +188,7 @@ class ConversationManager:
 
     def _update_mentioned_entities_from_dict(self, state: ConversationState, entities: Dict):
         """Update mentioned entities from Claude mode dict format"""
-        # Claude returns entities as: {'crops': ['maize', 'tomato'], ...}
+        # Claude returns entities as: {'crops': ['maize', 'tomato'], 'livestock': ['cattle', 'goats'], ...}
         # Just strings, not objects with normalized_form
 
         # Update crops
@@ -197,8 +198,16 @@ class ConversationManager:
                 if crop_str and crop_str not in state.mentioned_crops:
                     state.mentioned_crops.append(crop_str)
 
+        # Update livestock
+        if 'livestock' in entities and isinstance(entities['livestock'], list):
+            for animal in entities['livestock']:
+                animal_str = animal.lower() if isinstance(animal, str) else str(animal)
+                if animal_str and animal_str not in state.mentioned_livestock:
+                    state.mentioned_livestock.append(animal_str)
+
         # Limit entity lists to prevent memory bloat
         state.mentioned_crops = state.mentioned_crops[-5:]
+        state.mentioned_livestock = state.mentioned_livestock[-5:]
 
     def _extract_entity_summary(self, entities: Dict) -> Dict[str, List[str]]:
         """Extract summary of entities for context storage"""
@@ -261,11 +270,12 @@ class ConversationManager:
             confidence=confidence_score
         )
         
-        # Update conversation context
+        # Update conversation context with crops and livestock
         self.conversation_repo.update_conversation_context(
             state.conversation_id,
             state.current_topic,
-            state.mentioned_crops
+            state.mentioned_crops,
+            state.mentioned_livestock
         )
     
     def _load_user_preferences(self, user) -> Dict[str, Any]:
@@ -282,10 +292,11 @@ class ConversationManager:
         state = self.active_conversations.get(user_id)
         if not state:
             return {}
-        
+
         return {
             'current_topic': state.current_topic,
             'mentioned_crops': state.mentioned_crops,
+            'mentioned_livestock': state.mentioned_livestock,
             'mentioned_regions': state.mentioned_regions,
             'mentioned_diseases': state.mentioned_diseases,
             'mentioned_pests': state.mentioned_pests,

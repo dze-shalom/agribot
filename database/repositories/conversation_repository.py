@@ -92,7 +92,8 @@ class ConversationRepository:
     
     @staticmethod
     def update_conversation_context(conversation_id: int, topic: str = None,
-                                  crops: List[str] = None, title: str = None) -> bool:
+                                  crops: List[str] = None, livestock: List[str] = None,
+                                  title: str = None) -> bool:
         """Update conversation context information"""
         try:
             conversation = Conversation.query.get(conversation_id)
@@ -104,6 +105,9 @@ class ConversationRepository:
 
             if crops is not None:
                 conversation.set_mentioned_crops(crops)
+
+            if livestock is not None:
+                conversation.set_mentioned_livestock(livestock)
 
             if title:
                 conversation.title = title
