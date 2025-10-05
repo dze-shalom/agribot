@@ -8,7 +8,6 @@ Handles feedback collection, usage analytics, and error logging.
 
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta, date
-import json
 from database.models.analytics import Feedback, UsageAnalytics, ErrorLog, db
 from database.models.conversation import Conversation, Message
 from database.models.user import User
@@ -403,25 +402,12 @@ class AnalyticsRepository:
                     hourly_activity[hour] = hour_data.count
 
             # Crop trends - get from conversations
-            # Query only specific columns to avoid loading mentioned_livestock which doesn't exist yet
             crop_counts = {}
-            try:
-                conversations = db.session.query(
-                    Conversation.id,
-                    Conversation.mentioned_crops
-                ).filter(Conversation.start_time >= cutoff_date).all()
-
-                for conv_id, mentioned_crops in conversations:
-                    if mentioned_crops:
-                        try:
-                            crops = json.loads(mentioned_crops)
-                            for crop in crops:
-                                crop_name = crop.lower().capitalize()
-                                crop_counts[crop_name] = crop_counts.get(crop_name, 0) + 1
-                        except:
-                            pass
-            except Exception:
-                pass  # If query fails, just return empty crop trends
+            for conv in Conversation.query.filter(Conversation.start_time >= cutoff_date).all():
+                if hasattr(conv, 'get_mentioned_crops'):
+                    for crop in conv.get_mentioned_crops():
+                        crop_name = crop.lower().capitalize()
+                        crop_counts[crop_name] = crop_counts.get(crop_name, 0) + 1
 
             # Get top 10 crops
             crop_trends = [
@@ -454,23 +440,14 @@ class AnalyticsRepository:
 
             # Conversation statistics
             # Calculate average conversation duration
-            # Query only specific columns to avoid loading mentioned_livestock which doesn't exist yet
-            duration_data = db.session.query(
-                Conversation.start_time,
-                Conversation.end_time
-            ).join(User).filter(
-                Conversation.start_time >= cutoff_date,
+            conversations_with_duration = conv_query.filter(
                 Conversation.end_time.isnot(None)
-            )
-            if region != 'all':
-                duration_data = duration_data.filter(User.region == region)
-
-            conversations_with_duration = duration_data.all()
+            ).all()
 
             if conversations_with_duration:
                 total_duration = sum(
-                    (end_time - start_time).total_seconds() / 60
-                    for start_time, end_time in conversations_with_duration
+                    (conv.end_time - conv.start_time).total_seconds() / 60
+                    for conv in conversations_with_duration
                 )
                 avg_duration = total_duration / len(conversations_with_duration)
             else:
