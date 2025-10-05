@@ -315,10 +315,45 @@ class AnalyticsRepository:
 
             # Satisfaction metrics
             satisfaction_data = AnalyticsRepository.get_satisfaction_metrics(days)
-            
+
             # Error summary
             error_data = AnalyticsRepository.get_error_summary(days)
-            
+
+            # User statistics (for charts and detailed analysis)
+            user_statistics = {
+                'total_users': total_users,
+                'active_users_7d': active_users,
+                'new_users_30d': new_users,
+                'active_users_30d': user_query.filter(User.last_active >= cutoff_date).count(),
+                'user_growth_rate': round((new_users / total_users * 100) if total_users > 0 else 0, 1)
+            }
+
+            # Conversation statistics
+            # Calculate average conversation duration
+            conversations_with_duration = conv_query.filter(
+                Conversation.end_time.isnot(None)
+            ).all()
+
+            if conversations_with_duration:
+                total_duration = sum(
+                    (conv.end_time - conv.start_time).total_seconds() / 60
+                    for conv in conversations_with_duration
+                )
+                avg_duration = total_duration / len(conversations_with_duration)
+            else:
+                avg_duration = 0
+
+            conversation_statistics = {
+                'total_conversations': total_conversations,
+                'conversations_7d': Conversation.query.filter(
+                    Conversation.start_time >= datetime.utcnow() - timedelta(days=7)
+                ).count(),
+                'avg_duration_minutes': round(avg_duration, 2),
+                'avg_messages_per_conversation': round(
+                    (total_messages / total_conversations) if total_conversations > 0 else 0, 2
+                )
+            }
+
             return {
                 'overview': {
                     'total_users': total_users,
@@ -337,6 +372,8 @@ class AnalyticsRepository:
                         (active_users / total_users * 100) if total_users > 0 else 0, 2
                     )
                 },
+                'user_statistics': user_statistics,
+                'conversation_statistics': conversation_statistics,
                 'satisfaction': satisfaction_data,
                 'errors': error_data,
                 'period_days': days
