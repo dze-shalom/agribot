@@ -221,6 +221,7 @@ class AgriBotEngine:
 
             final_response = {
                 'response': response_data['response'],
+                'conversation_id': conversation_state.conversation_id,  # Add conversation ID for feedback
                 'suggestions': response_data.get('follow_up_suggestions', []),
                 'metadata': {
                     'intent': intent_str,
