@@ -95,7 +95,11 @@ class ConversationManager:
         # Update mentioned entities
         entities = nlp_result.get('entities', {})
         if hasattr(entities, 'entities'):
+            # Traditional NLP mode: entities is an object
             self._update_mentioned_entities(state, entities.entities)
+        elif isinstance(entities, dict) and 'crops' in entities:
+            # Claude mode: entities is a dict with crops array
+            self._update_mentioned_entities_from_dict(state, entities)
         
         # Add to context history
         context_entry = {
@@ -178,7 +182,22 @@ class ConversationManager:
         state.mentioned_regions = state.mentioned_regions[-3:]
         state.mentioned_diseases = state.mentioned_diseases[-5:]
         state.mentioned_pests = state.mentioned_pests[-5:]
-    
+
+    def _update_mentioned_entities_from_dict(self, state: ConversationState, entities: Dict):
+        """Update mentioned entities from Claude mode dict format"""
+        # Claude returns entities as: {'crops': ['maize', 'tomato'], ...}
+        # Just strings, not objects with normalized_form
+
+        # Update crops
+        if 'crops' in entities and isinstance(entities['crops'], list):
+            for crop in entities['crops']:
+                crop_str = crop.lower() if isinstance(crop, str) else str(crop)
+                if crop_str and crop_str not in state.mentioned_crops:
+                    state.mentioned_crops.append(crop_str)
+
+        # Limit entity lists to prevent memory bloat
+        state.mentioned_crops = state.mentioned_crops[-5:]
+
     def _extract_entity_summary(self, entities: Dict) -> Dict[str, List[str]]:
         """Extract summary of entities for context storage"""
         summary = {}
