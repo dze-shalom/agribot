@@ -341,6 +341,64 @@ class AnalyticsRepository:
                 for r in regional_dist_query
             ]
 
+            # Intent distribution - get from messages
+            intent_dist_query = db.session.query(
+                Message.intent_classification,
+                db.func.count(Message.id).label('count')
+            ).filter(
+                Message.timestamp >= cutoff_date,
+                Message.intent_classification.isnot(None)
+            ).group_by(Message.intent_classification).all()
+
+            intent_distribution = [
+                {'intent': i.intent_classification or 'Unknown', 'count': i.count}
+                for i in intent_dist_query
+            ] if intent_dist_query else []
+
+            # Sentiment analysis - get from messages
+            sentiment_query = db.session.query(Message.sentiment_score).filter(
+                Message.timestamp >= cutoff_date,
+                Message.sentiment_score.isnot(None)
+            ).all()
+
+            positive_count = sum(1 for s in sentiment_query if s.sentiment_score and s.sentiment_score > 0.1)
+            neutral_count = sum(1 for s in sentiment_query if s.sentiment_score and -0.1 <= s.sentiment_score <= 0.1)
+            negative_count = sum(1 for s in sentiment_query if s.sentiment_score and s.sentiment_score < -0.1)
+            avg_sentiment = sum(s.sentiment_score for s in sentiment_query if s.sentiment_score) / len(sentiment_query) if sentiment_query else 0
+
+            sentiment_data_detailed = {
+                'positive_count': positive_count,
+                'neutral_count': neutral_count,
+                'negative_count': negative_count,
+                'average': avg_sentiment
+            }
+
+            # Hourly activity - messages by hour
+            hourly_activity = [0] * 24
+            hourly_query = db.session.query(
+                db.func.extract('hour', Message.timestamp).label('hour'),
+                db.func.count(Message.id).label('count')
+            ).filter(Message.timestamp >= cutoff_date).group_by('hour').all()
+
+            for hour_data in hourly_query:
+                hour = int(hour_data.hour) if hour_data.hour is not None else 0
+                if 0 <= hour < 24:
+                    hourly_activity[hour] = hour_data.count
+
+            # Crop trends - get from conversations
+            crop_counts = {}
+            for conv in Conversation.query.filter(Conversation.start_time >= cutoff_date).all():
+                if hasattr(conv, 'get_mentioned_crops'):
+                    for crop in conv.get_mentioned_crops():
+                        crop_name = crop.lower().capitalize()
+                        crop_counts[crop_name] = crop_counts.get(crop_name, 0) + 1
+
+            # Get top 10 crops
+            crop_trends = [
+                {'crop': crop, 'count': count}
+                for crop, count in sorted(crop_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+            ]
+
             # User statistics (for charts and detailed analysis)
             user_statistics = {
                 'total_users': total_users,
@@ -398,6 +456,10 @@ class AnalyticsRepository:
                 'conversation_statistics': conversation_statistics,
                 'country_distribution': country_distribution,
                 'regional_distribution': regional_distribution,
+                'intent_distribution': intent_distribution,
+                'sentiment': sentiment_data_detailed,
+                'hourly_activity': hourly_activity,
+                'crop_trends': crop_trends,
                 'satisfaction': satisfaction_data,
                 'errors': error_data,
                 'period_days': days
