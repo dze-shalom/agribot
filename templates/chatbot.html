@@ -1484,21 +1484,25 @@
                         const userRegion = data.user.region || 'centre';
                         const regionSelect = document.getElementById('userRegion');
 
-                        // Check if region exists in dropdown options
-                        const regionExists = Array.from(regionSelect.options).some(
-                            option => option.value.toLowerCase() === userRegion.toLowerCase()
+                        // Normalize region to lowercase for consistency
+                        const normalizedRegion = userRegion.toLowerCase();
+
+                        // Check if region exists in dropdown options (case-insensitive)
+                        const matchingOption = Array.from(regionSelect.options).find(
+                            option => option.value.toLowerCase() === normalizedRegion
                         );
 
-                        if (!regionExists) {
+                        if (matchingOption) {
+                            // Use the existing option's value (keeps original case)
+                            regionSelect.value = matchingOption.value;
+                        } else {
                             // Add user's region as a new option (for non-Cameroon users)
                             const newOption = document.createElement('option');
-                            newOption.value = userRegion;
-                            newOption.textContent = userRegion.charAt(0).toUpperCase() + userRegion.slice(1);
+                            newOption.value = normalizedRegion;
+                            newOption.textContent = normalizedRegion.charAt(0).toUpperCase() + normalizedRegion.slice(1);
                             regionSelect.insertBefore(newOption, regionSelect.firstChild);
+                            regionSelect.value = normalizedRegion;
                         }
-
-                        // Set the region value
-                        regionSelect.value = userRegion;
 
                         // Check if user should be redirected to admin panel
                         if (data.user.account_type === 'admin') {
