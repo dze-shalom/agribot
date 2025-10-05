@@ -599,12 +599,13 @@ def export_ml_training_dataset(start_date, end_date):
         conv = msg.conversation
         feedback = None
 
-        # Match feedback
-        if conv and conv.session_id and conv.session_id in feedback_by_conv:
-            session_feedbacks = feedback_by_conv[conv.session_id]
-            if session_feedbacks:
-                session_feedbacks.sort(key=lambda f: f.timestamp if f.timestamp else datetime.min, reverse=True)
-                feedback = session_feedbacks[0]
+        # Match feedback by conversation ID (not session_id)
+        if conv and conv.id in feedback_by_conv:
+            conv_feedbacks = feedback_by_conv[conv.id]
+            if conv_feedbacks:
+                # Get most recent feedback for this conversation
+                conv_feedbacks.sort(key=lambda f: f.timestamp if f.timestamp else datetime.min, reverse=True)
+                feedback = conv_feedbacks[0]
 
         # Find bot response
         bot_response = Message.query.filter(
