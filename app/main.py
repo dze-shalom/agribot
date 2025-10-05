@@ -357,9 +357,12 @@ def setup_session_config(app):
         'PERMANENT_SESSION_LIFETIME': 86400,  # 24 hours
     })
 
+# Create app instance for gunicorn
+app = create_app()
+
 # For development server
 if __name__ == '__main__':
-    app = create_app()
+    # Use the existing app instance
     
     # Additional dev configuration
     if app.debug:
