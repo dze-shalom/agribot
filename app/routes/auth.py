@@ -1051,11 +1051,17 @@ def get_detailed_analytics():
 
         # Crop mentions over time (last 30 days)
         crop_mentions = {}
-        conversations_with_crops = Conversation.query.filter(Conversation.mentioned_crops.isnot(None)).all()
-        for conv in conversations_with_crops:
-            crops = conv.get_mentioned_crops()
-            for crop in crops:
-                crop_mentions[crop] = crop_mentions.get(crop, 0) + 1
+        # Query only mentioned_crops column to avoid loading mentioned_livestock which doesn't exist yet
+        import json
+        conversations_with_crops = db.session.query(Conversation.mentioned_crops).filter(Conversation.mentioned_crops.isnot(None)).all()
+        for (mentioned_crops_json,) in conversations_with_crops:
+            if mentioned_crops_json:
+                try:
+                    crops = json.loads(mentioned_crops_json)
+                    for crop in crops:
+                        crop_mentions[crop] = crop_mentions.get(crop, 0) + 1
+                except:
+                    pass
 
         crop_trends = [{'crop': k, 'mentions': v} for k, v in sorted(crop_mentions.items(), key=lambda x: x[1], reverse=True)[:10]]
 
