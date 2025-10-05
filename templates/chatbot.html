@@ -1480,9 +1480,25 @@
                         currentUser = data.user;
                         document.getElementById('userName').value = data.user.name;
 
-                        // Normalize region value to lowercase for consistency
-                        const userRegion = data.user.region ? data.user.region.toLowerCase().replace(/ /g, '_') : 'centre';
-                        document.getElementById('userRegion').value = userRegion;
+                        // Set user region - add to dropdown if not present
+                        const userRegion = data.user.region || 'centre';
+                        const regionSelect = document.getElementById('userRegion');
+
+                        // Check if region exists in dropdown options
+                        const regionExists = Array.from(regionSelect.options).some(
+                            option => option.value.toLowerCase() === userRegion.toLowerCase()
+                        );
+
+                        if (!regionExists) {
+                            // Add user's region as a new option (for non-Cameroon users)
+                            const newOption = document.createElement('option');
+                            newOption.value = userRegion;
+                            newOption.textContent = userRegion.charAt(0).toUpperCase() + userRegion.slice(1);
+                            regionSelect.insertBefore(newOption, regionSelect.firstChild);
+                        }
+
+                        // Set the region value
+                        regionSelect.value = userRegion;
 
                         // Check if user should be redirected to admin panel
                         if (data.user.account_type === 'admin') {
