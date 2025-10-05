@@ -402,12 +402,26 @@ class AnalyticsRepository:
                     hourly_activity[hour] = hour_data.count
 
             # Crop trends - get from conversations
+            # Query only specific columns to avoid loading mentioned_livestock which doesn't exist yet
             crop_counts = {}
-            for conv in Conversation.query.filter(Conversation.start_time >= cutoff_date).all():
-                if hasattr(conv, 'get_mentioned_crops'):
-                    for crop in conv.get_mentioned_crops():
-                        crop_name = crop.lower().capitalize()
-                        crop_counts[crop_name] = crop_counts.get(crop_name, 0) + 1
+            try:
+                conversations = db.session.query(
+                    Conversation.id,
+                    Conversation.mentioned_crops
+                ).filter(Conversation.start_time >= cutoff_date).all()
+
+                for conv_id, mentioned_crops in conversations:
+                    if mentioned_crops:
+                        try:
+                            import json
+                            crops = json.loads(mentioned_crops)
+                            for crop in crops:
+                                crop_name = crop.lower().capitalize()
+                                crop_counts[crop_name] = crop_counts.get(crop_name, 0) + 1
+                        except:
+                            pass
+            except Exception:
+                pass  # If query fails, just return empty crop trends
 
             # Get top 10 crops
             crop_trends = [
