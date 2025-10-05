@@ -94,12 +94,21 @@ class ConversationManager:
         
         # Update mentioned entities
         entities = nlp_result.get('entities', {})
+
+        # Debug logging
+        self.logger.info(f"Entities type: {type(entities)}, value: {entities}")
+
         if hasattr(entities, 'entities'):
             # Traditional NLP mode: entities is an object
+            self.logger.info("Using traditional NLP entity update")
             self._update_mentioned_entities(state, entities.entities)
-        elif isinstance(entities, dict) and 'crops' in entities:
+        elif isinstance(entities, dict):
             # Claude mode: entities is a dict with crops array
-            self._update_mentioned_entities_from_dict(state, entities)
+            self.logger.info(f"Using Claude entity update, crops: {entities.get('crops', [])}")
+            if 'crops' in entities:
+                self._update_mentioned_entities_from_dict(state, entities)
+        else:
+            self.logger.warning(f"Unknown entities format: {type(entities)}")
         
         # Add to context history
         context_entry = {
@@ -188,15 +197,20 @@ class ConversationManager:
         # Claude returns entities as: {'crops': ['maize', 'tomato'], ...}
         # Just strings, not objects with normalized_form
 
+        self.logger.info(f"Updating entities from dict: {entities}")
+
         # Update crops
         if 'crops' in entities and isinstance(entities['crops'], list):
+            self.logger.info(f"Found crops in entities: {entities['crops']}")
             for crop in entities['crops']:
                 crop_str = crop.lower() if isinstance(crop, str) else str(crop)
                 if crop_str and crop_str not in state.mentioned_crops:
                     state.mentioned_crops.append(crop_str)
+                    self.logger.info(f"Added crop '{crop_str}' to state. Current crops: {state.mentioned_crops}")
 
         # Limit entity lists to prevent memory bloat
         state.mentioned_crops = state.mentioned_crops[-5:]
+        self.logger.info(f"Final mentioned_crops for conversation {state.conversation_id}: {state.mentioned_crops}")
 
     def _extract_entity_summary(self, entities: Dict) -> Dict[str, List[str]]:
         """Extract summary of entities for context storage"""
