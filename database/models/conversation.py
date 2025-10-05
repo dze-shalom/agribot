@@ -29,7 +29,7 @@ class Conversation(db.Model):
     title = db.Column(db.String(200), default='New Conversation')
     current_topic = db.Column(db.String(100), default='general')
     mentioned_crops = db.Column(db.Text)  # JSON array of crops discussed
-    mentioned_livestock = db.Column(db.Text, nullable=True)  # JSON array of livestock discussed
+    # mentioned_livestock = db.Column(db.Text, nullable=True)  # TODO: Uncomment after migration
     region = db.Column(db.String(50))
     
     # Conversation metrics
@@ -66,25 +66,26 @@ class Conversation(db.Model):
             crops.append(crop)
             self.set_mentioned_crops(crops)
 
-    def get_mentioned_livestock(self) -> List[str]:
-        """Get list of livestock mentioned in this conversation"""
-        if self.mentioned_livestock:
-            try:
-                return json.loads(self.mentioned_livestock)
-            except json.JSONDecodeError:
-                return []
-        return []
+    # TODO: Uncomment after running migration
+    # def get_mentioned_livestock(self) -> List[str]:
+    #     """Get list of livestock mentioned in this conversation"""
+    #     if self.mentioned_livestock:
+    #         try:
+    #             return json.loads(self.mentioned_livestock)
+    #         except json.JSONDecodeError:
+    #             return []
+    #     return []
 
-    def set_mentioned_livestock(self, livestock: List[str]):
-        """Set the mentioned livestock list"""
-        self.mentioned_livestock = json.dumps(livestock)
+    # def set_mentioned_livestock(self, livestock: List[str]):
+    #     """Set the mentioned livestock list"""
+    #     self.mentioned_livestock = json.dumps(livestock)
 
-    def add_livestock(self, animal: str):
-        """Add livestock to the mentioned livestock list"""
-        livestock = self.get_mentioned_livestock()
-        if animal not in livestock:
-            livestock.append(animal)
-            self.set_mentioned_livestock(livestock)
+    # def add_livestock(self, animal: str):
+    #     """Add livestock to the mentioned livestock list"""
+    #     livestock = self.get_mentioned_livestock()
+    #     if animal not in livestock:
+    #         livestock.append(animal)
+    #         self.set_mentioned_livestock(livestock)
 
     def end_conversation(self):
         """Mark conversation as ended"""

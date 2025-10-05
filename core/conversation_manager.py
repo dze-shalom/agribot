@@ -21,7 +21,7 @@ class ConversationState:
     conversation_id: Optional[int] = None
     current_topic: str = 'general'
     mentioned_crops: List[str] = field(default_factory=list)
-    mentioned_livestock: List[str] = field(default_factory=list)
+    # mentioned_livestock: List[str] = field(default_factory=list)  # TODO: Uncomment after migration
     mentioned_regions: List[str] = field(default_factory=list)
     mentioned_diseases: List[str] = field(default_factory=list)
     mentioned_pests: List[str] = field(default_factory=list)
@@ -198,16 +198,17 @@ class ConversationManager:
                 if crop_str and crop_str not in state.mentioned_crops:
                     state.mentioned_crops.append(crop_str)
 
-        # Update livestock
-        if 'livestock' in entities and isinstance(entities['livestock'], list):
-            for animal in entities['livestock']:
-                animal_str = animal.lower() if isinstance(animal, str) else str(animal)
-                if animal_str and animal_str not in state.mentioned_livestock:
-                    state.mentioned_livestock.append(animal_str)
+        # TODO: Uncomment after migration
+        # # Update livestock
+        # if 'livestock' in entities and isinstance(entities['livestock'], list):
+        #     for animal in entities['livestock']:
+        #         animal_str = animal.lower() if isinstance(animal, str) else str(animal)
+        #         if animal_str and animal_str not in state.mentioned_livestock:
+        #             state.mentioned_livestock.append(animal_str)
 
         # Limit entity lists to prevent memory bloat
         state.mentioned_crops = state.mentioned_crops[-5:]
-        state.mentioned_livestock = state.mentioned_livestock[-5:]
+        # state.mentioned_livestock = state.mentioned_livestock[-5:]  # TODO: Uncomment after migration
 
     def _extract_entity_summary(self, entities: Dict) -> Dict[str, List[str]]:
         """Extract summary of entities for context storage"""
@@ -296,7 +297,7 @@ class ConversationManager:
         return {
             'current_topic': state.current_topic,
             'mentioned_crops': state.mentioned_crops,
-            'mentioned_livestock': state.mentioned_livestock,
+            # 'mentioned_livestock': state.mentioned_livestock,  # TODO: Uncomment after migration
             'mentioned_regions': state.mentioned_regions,
             'mentioned_diseases': state.mentioned_diseases,
             'mentioned_pests': state.mentioned_pests,
