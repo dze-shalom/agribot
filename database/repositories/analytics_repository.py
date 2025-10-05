@@ -454,14 +454,23 @@ class AnalyticsRepository:
 
             # Conversation statistics
             # Calculate average conversation duration
-            conversations_with_duration = conv_query.filter(
+            # Query only specific columns to avoid loading mentioned_livestock which doesn't exist yet
+            duration_data = db.session.query(
+                Conversation.start_time,
+                Conversation.end_time
+            ).join(User).filter(
+                Conversation.start_time >= cutoff_date,
                 Conversation.end_time.isnot(None)
-            ).all()
+            )
+            if region != 'all':
+                duration_data = duration_data.filter(User.region == region)
+
+            conversations_with_duration = duration_data.all()
 
             if conversations_with_duration:
                 total_duration = sum(
-                    (conv.end_time - conv.start_time).total_seconds() / 60
-                    for conv in conversations_with_duration
+                    (end_time - start_time).total_seconds() / 60
+                    for start_time, end_time in conversations_with_duration
                 )
                 avg_duration = total_duration / len(conversations_with_duration)
             else:
