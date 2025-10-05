@@ -214,11 +214,13 @@ class ConversationManager:
             sentiment=getattr(sentiment_data, 'polarity', None) if hasattr(sentiment_data, 'polarity') else None
         )
         
-        # Add bot response
+        # Add bot response with confidence score
         bot_msg = self.conversation_repo.add_message(
             state.conversation_id,
             bot_response,
-            'bot'
+            'bot',
+            intent=getattr(intent_data, 'intent', None) if hasattr(intent_data, 'intent') else None,
+            confidence=getattr(intent_data, 'confidence', None) if hasattr(intent_data, 'intent') else None
         )
         
         # Update conversation context
