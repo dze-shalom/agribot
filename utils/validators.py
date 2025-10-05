@@ -42,13 +42,15 @@ def validate_chat_input(data: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 def validate_region(region: str) -> bool:
-    """Validate if region is supported"""
-    supported_regions = [
-        'centre', 'littoral', 'west', 'northwest', 'southwest',
-        'east', 'north', 'far_north', 'adamawa', 'south'
-    ]
-    
-    return region.lower().strip() in supported_regions
+    """Validate if region is supported - accepts any non-empty region string"""
+    # Accept any region since the app now supports worldwide coverage
+    # Users from different countries will have different region names
+    if not region or not isinstance(region, str):
+        return False
+
+    # Basic validation: must be non-empty and reasonable length
+    region = region.strip()
+    return len(region) > 0 and len(region) <= 100
 
 def validate_crop(crop: str) -> bool:
     """Validate if crop is supported"""
