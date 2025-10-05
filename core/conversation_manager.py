@@ -198,29 +198,46 @@ class ConversationManager:
         """Persist conversation update to database"""
         if not state.conversation_id:
             return
-        
-        # Add user message
+
+        # Extract data from nlp_result
         intent_data = nlp_result.get('intent', {})
         entities_data = nlp_result.get('entities', {})
         sentiment_data = nlp_result.get('sentiment', {})
-        
+
+        # Handle different confidence formats (object vs direct value)
+        confidence_score = None
+        if hasattr(intent_data, 'confidence'):
+            # Traditional NLP mode: intent is an object with confidence
+            confidence_score = intent_data.confidence
+        elif 'confidence' in nlp_result:
+            # Claude mode: confidence is a separate field in nlp_result
+            confidence_score = nlp_result.get('confidence')
+
+        # Handle intent (can be string or object)
+        intent_str = None
+        if hasattr(intent_data, 'intent'):
+            intent_str = intent_data.intent
+        elif isinstance(intent_data, str):
+            intent_str = intent_data
+
+        # Add user message
         user_msg = self.conversation_repo.add_message(
             state.conversation_id,
             user_message,
             'user',
-            intent=getattr(intent_data, 'intent', None) if hasattr(intent_data, 'intent') else None,
-            confidence=getattr(intent_data, 'confidence', None) if hasattr(intent_data, 'intent') else None,
+            intent=intent_str,
+            confidence=confidence_score,
             entities=getattr(entities_data, 'entities', {}) if hasattr(entities_data, 'entities') else {},
             sentiment=getattr(sentiment_data, 'polarity', None) if hasattr(sentiment_data, 'polarity') else None
         )
-        
-        # Add bot response with confidence score
+
+        # Add bot response with same confidence score
         bot_msg = self.conversation_repo.add_message(
             state.conversation_id,
             bot_response,
             'bot',
-            intent=getattr(intent_data, 'intent', None) if hasattr(intent_data, 'intent') else None,
-            confidence=getattr(intent_data, 'confidence', None) if hasattr(intent_data, 'intent') else None
+            intent=intent_str,
+            confidence=confidence_score
         )
         
         # Update conversation context
