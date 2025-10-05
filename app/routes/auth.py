@@ -1018,11 +1018,14 @@ def get_knowledge_transfer():
 @admin_required
 def get_detailed_analytics():
     """Get detailed analytics for Analytics tab"""
+    logger.info("Analytics detailed endpoint called")
     try:
         from database.models.conversation import Message
         from database.models.analytics import Feedback
         from sqlalchemy import func
         from collections import Counter
+
+        logger.info("Starting analytics queries")
 
         # Intent distribution
         intents = db.session.query(
@@ -1097,6 +1100,9 @@ def get_detailed_analytics():
         })
 
     except Exception as e:
+        import traceback
+        logger.error(f"Error in analytics detailed: {str(e)}")
+        logger.error(f"Full traceback:\n{traceback.format_exc()}")
         return jsonify({'error': 'Failed to fetch detailed analytics', 'details': str(e)}), 500
 
 @auth_bp.route('/admin/recent-activity', methods=['GET'])
