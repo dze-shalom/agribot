@@ -330,7 +330,23 @@ class AnalyticsRepository:
                 for c in country_dist_query
             ]
 
-            # Regional distribution
+            # Regional distribution grouped by country
+            regional_by_country_query = db.session.query(
+                User.country,
+                User.region,
+                db.func.count(User.id).label('count')
+            ).group_by(User.country, User.region).all()
+
+            # Build nested structure: country -> regions
+            regional_by_country = {}
+            for r in regional_by_country_query:
+                country = r.country or 'Unknown'
+                region = r.region or 'Unknown'
+                if country not in regional_by_country:
+                    regional_by_country[country] = []
+                regional_by_country[country].append({'region': region, 'count': r.count})
+
+            # Also provide flat regional distribution for backwards compatibility
             regional_dist_query = db.session.query(
                 User.region,
                 db.func.count(User.id).label('count')
@@ -399,6 +415,20 @@ class AnalyticsRepository:
                 for crop, count in sorted(crop_counts.items(), key=lambda x: x[1], reverse=True)[:10]
             ]
 
+            # Confidence distribution - group confidence scores into buckets
+            confidence_scores = db.session.query(Message.confidence_score).filter(
+                Message.timestamp >= cutoff_date,
+                Message.confidence_score.isnot(None)
+            ).all()
+
+            # Create distribution buckets (0.0-0.1, 0.1-0.2, ..., 0.9-1.0)
+            confidence_distribution = []
+            for i in range(10):
+                bucket_start = i / 10
+                bucket_end = (i + 1) / 10
+                count = sum(1 for s in confidence_scores if s.confidence_score and bucket_start <= s.confidence_score < bucket_end)
+                confidence_distribution.append({'score': (bucket_start + bucket_end) / 2, 'count': count})
+
             # User statistics (for charts and detailed analysis)
             user_statistics = {
                 'total_users': total_users,
@@ -456,10 +486,12 @@ class AnalyticsRepository:
                 'conversation_statistics': conversation_statistics,
                 'country_distribution': country_distribution,
                 'regional_distribution': regional_distribution,
+                'regional_by_country': regional_by_country,
                 'intent_distribution': intent_distribution,
                 'sentiment': sentiment_data_detailed,
                 'hourly_activity': hourly_activity,
                 'crop_trends': crop_trends,
+                'confidence_distribution': confidence_distribution,
                 'satisfaction': satisfaction_data,
                 'errors': error_data,
                 'period_days': days
