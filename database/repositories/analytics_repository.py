@@ -319,6 +319,28 @@ class AnalyticsRepository:
             # Error summary
             error_data = AnalyticsRepository.get_error_summary(days)
 
+            # Country distribution
+            country_dist_query = db.session.query(
+                User.country,
+                db.func.count(User.id).label('count')
+            ).group_by(User.country).all()
+
+            country_distribution = [
+                {'country': c.country or 'Unknown', 'count': c.count}
+                for c in country_dist_query
+            ]
+
+            # Regional distribution
+            regional_dist_query = db.session.query(
+                User.region,
+                db.func.count(User.id).label('count')
+            ).group_by(User.region).all()
+
+            regional_distribution = [
+                {'region': r.region or 'Unknown', 'count': r.count}
+                for r in regional_dist_query
+            ]
+
             # User statistics (for charts and detailed analysis)
             user_statistics = {
                 'total_users': total_users,
@@ -374,6 +396,8 @@ class AnalyticsRepository:
                 },
                 'user_statistics': user_statistics,
                 'conversation_statistics': conversation_statistics,
+                'country_distribution': country_distribution,
+                'regional_distribution': regional_distribution,
                 'satisfaction': satisfaction_data,
                 'errors': error_data,
                 'period_days': days

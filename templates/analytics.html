@@ -2320,6 +2320,14 @@
                                 </div>
                             </div>
 
+                            <!-- Country Distribution -->
+                            <div style="margin-bottom: 20px;">
+                                <div class="chart-card">
+                                    <h4>🌍 User Distribution by Country</h4>
+                                    <canvas id="countryChart"></canvas>
+                                </div>
+                            </div>
+
                             <!-- Regional & Crop Trends -->
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                                 <div class="chart-card">
@@ -2458,6 +2466,60 @@
                             }
                         }
                     });
+
+                        // Create Country Distribution Chart
+                        const countryCanvas = document.getElementById('countryChart');
+                        if (countryCanvas && data.country_distribution) {
+                            const countryCtx = countryCanvas.getContext('2d');
+                            analyticsCharts.countryChart = new Chart(countryCtx, {
+                                type: 'bar',
+                                data: {
+                                    labels: data.country_distribution.map(c => c.country),
+                                    datasets: [{
+                                        label: 'Users',
+                                        data: data.country_distribution.map(c => c.count),
+                                        backgroundColor: ['#27ae60', '#3498db', '#f39c12', '#e74c3c', '#9b59b6', '#1abc9c', '#34495e', '#16a085', '#d35400', '#8e44ad']
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: true,
+                                    animation: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            enabled: true,
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const value = context.parsed.y || 0;
+                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                    const percentage = ((value / total) * 100).toFixed(1);
+                                                    return `Users: ${value} (${percentage}%)`;
+                                                }
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: {
+                                                stepSize: 1
+                                            }
+                                        }
+                                    },
+                                    onClick: (event, activeElements) => {
+                                        if (activeElements.length > 0) {
+                                            const index = activeElements[0].index;
+                                            const country = data.country_distribution[index].country;
+                                            const count = data.country_distribution[index].count;
+                                            const total = data.country_distribution.reduce((sum, c) => sum + c.count, 0);
+                                            const percentage = ((count / total) * 100).toFixed(1);
+                                            alert(`Country: ${country}\nUsers: ${count} (${percentage}% of total)`);
+                                        }
+                                    }
+                                }
+                            });
+                        }
 
                         // Create Regional Chart
                         const regionalCanvas = document.getElementById('regionalChart');
