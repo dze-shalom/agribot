@@ -960,14 +960,19 @@ def get_knowledge_transfer():
         new_users = User.query.filter(User.created_at >= datetime.now(timezone.utc) - timedelta(days=30)).count()
         returning_users = total_users - new_users
 
-        # Knowledge categories (topics discussed)
-        all_conversations = Conversation.query.all()
-        topics = [conv.current_topic for conv in all_conversations if conv.current_topic]
-        topic_distribution = Counter(topics).most_common(10)
+        # Knowledge categories (topics discussed) - optimized query
+        topic_query = db.session.query(
+            Conversation.current_topic,
+            db.func.count(Conversation.id).label('count')
+        ).filter(Conversation.current_topic.isnot(None)).group_by(Conversation.current_topic).all()
+        topic_distribution = [(t[0], t[1]) for t in topic_query][:10]
 
-        # Regional knowledge spread
-        regions = [conv.region for conv in all_conversations if conv.region]
-        regional_adoption = Counter(regions).most_common()
+        # Regional knowledge spread - optimized query
+        regional_query = db.session.query(
+            Conversation.region,
+            db.func.count(Conversation.id).label('count')
+        ).filter(Conversation.region.isnot(None)).group_by(Conversation.region).all()
+        regional_adoption = [(r[0], r[1]) for r in regional_query]
 
         # Learning progression (users with multiple conversations = learning)
         user_conversation_counts = db.session.query(
@@ -979,16 +984,30 @@ def get_knowledge_transfer():
         learners = sum(1 for _, count in user_conversation_counts if 2 <= count <= 5)
         experts = sum(1 for _, count in user_conversation_counts if count > 5)
 
-        # Knowledge satisfaction (feedback on learning)
-        feedbacks = Feedback.query.all()
-        avg_knowledge_rating = sum(f.completeness_rating for f in feedbacks if f.completeness_rating) / len(feedbacks) if feedbacks else 0
+        # Knowledge satisfaction (feedback on learning) - optimized query
+        avg_knowledge_rating_query = db.session.query(
+            db.func.avg(Feedback.completeness_rating)
+        ).filter(Feedback.completeness_rating.isnot(None)).scalar()
+        avg_knowledge_rating = float(avg_knowledge_rating_query) if avg_knowledge_rating_query else 0
 
-        # Most requested knowledge areas (crops)
-        all_crops = []
-        for conv in all_conversations:
-            if hasattr(conv, 'get_mentioned_crops'):
-                all_crops.extend(conv.get_mentioned_crops())
-        crop_demand = Counter(all_crops).most_common(15)
+        # Most requested knowledge areas (crops) - optimized approach
+        # Query only mentioned_crops column instead of loading all conversations
+        import json
+        crop_counter = Counter()
+        conversations_with_crops = db.session.query(Conversation.mentioned_crops).filter(
+            Conversation.mentioned_crops.isnot(None)
+        ).limit(1000).all()  # Limit to prevent memory issues
+
+        for (crops_json,) in conversations_with_crops:
+            if crops_json:
+                try:
+                    crops = json.loads(crops_json) if isinstance(crops_json, str) else crops_json
+                    if isinstance(crops, list):
+                        crop_counter.update(crops)
+                except:
+                    pass
+
+        crop_demand = crop_counter.most_common(15)
 
         return jsonify({
             'success': True,
