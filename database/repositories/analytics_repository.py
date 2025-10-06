@@ -17,12 +17,29 @@ class AnalyticsRepository:
     """Repository for analytics and feedback data operations"""
     
     @staticmethod
-    def add_feedback(conversation_id: int, user_id: str, helpful: bool = None,
+    def add_feedback(conversation_id, user_id: str, helpful: bool = None,
                     overall_rating: int = None, accuracy_rating: int = None,
                     completeness_rating: int = None, comment: str = None,
                     improvement_suggestion: str = None) -> Feedback:
-        """Add user feedback for a conversation"""
+        """Add user feedback for a conversation
+
+        Args:
+            conversation_id: Can be int (real conversation ID) or str (temporary session ID)
+            user_id: User ID
+            helpful: Boolean helpful rating
+            overall_rating: 1-5 rating
+            accuracy_rating: 1-5 rating
+            completeness_rating: 1-5 rating
+            comment: Text comment
+            improvement_suggestion: Text suggestion
+        """
         try:
+            # Convert conversation_id to string to ensure consistency
+            if isinstance(conversation_id, int):
+                conversation_id = str(conversation_id)
+            elif not isinstance(conversation_id, str):
+                conversation_id = str(conversation_id)
+
             feedback = Feedback(
                 conversation_id=conversation_id,
                 user_id=user_id,

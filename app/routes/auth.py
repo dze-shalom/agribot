@@ -476,9 +476,13 @@ def get_analytics_overview():
         # Use the enhanced analytics repository with region filter
         analytics_data = AnalyticsRepository.get_comprehensive_analytics(days, region)
 
+        # Return the analytics data as-is since it already contains the overview structure
         return jsonify(analytics_data)
 
     except Exception as e:
+        import traceback
+        logger.error(f"Error in analytics overview: {str(e)}")
+        logger.error(f"Full traceback:\n{traceback.format_exc()}")
         return jsonify({'error': 'Failed to get analytics overview', 'details': str(e)}), 500
 
 @auth_bp.route('/admin/analytics/regional-distribution', methods=['GET'])

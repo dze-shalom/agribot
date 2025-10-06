@@ -75,10 +75,11 @@ class Analytics(db.Model):
 class Feedback(db.Model):
     """User feedback model for collecting user satisfaction data"""
     __tablename__ = 'feedback'
-    
+
     # Primary key and relationships
     id = db.Column(db.Integer, primary_key=True)
-    conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.id'), nullable=False)
+    # Allow string to support temporary session IDs before conversation is persisted
+    conversation_id = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     # Feedback ratings (1-5 scale)
