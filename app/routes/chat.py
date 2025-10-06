@@ -115,8 +115,8 @@ def submit_feedback():
         improvement_suggestion = data.get('improvement_suggestion', '').strip()
         conversation_id = data.get('conversation_id')
 
-        # Accept conversation_id as-is (can be integer or string like 'session_xxx')
-        # SQLite supports storing strings in INTEGER columns due to type affinity
+        # Accept any conversation_id (integer or session string like 'session_xxx')
+        # Database now uses VARCHAR(100) to support both types
         if not conversation_id:
             return jsonify({'error': 'Conversation ID is required'}), 400
         
