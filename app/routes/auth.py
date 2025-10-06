@@ -1072,7 +1072,7 @@ def get_detailed_analytics():
         hourly_data = {int(h[0]): h[1] for h in hourly_activity if h[0]}
         hourly_formatted = [hourly_data.get(h, 0) for h in range(24)]
 
-        # Regional distribution
+        # Regional distribution (already optimized with GROUP BY - no memory issue)
         regional = db.session.query(
             Conversation.region,
             func.count(Conversation.id).label('count')
@@ -1084,7 +1084,11 @@ def get_detailed_analytics():
         crop_mentions = {}
         # Query only mentioned_crops column to avoid loading mentioned_livestock which doesn't exist yet
         import json
-        conversations_with_crops = db.session.query(Conversation.mentioned_crops).filter(Conversation.mentioned_crops.isnot(None)).all()
+        # OPTIMIZED: Limit to 1000 most recent conversations to prevent memory issues
+        conversations_with_crops = db.session.query(Conversation.mentioned_crops).filter(
+            Conversation.mentioned_crops.isnot(None)
+        ).order_by(Conversation.id.desc()).limit(1000).all()
+
         for (mentioned_crops_json,) in conversations_with_crops:
             if mentioned_crops_json:
                 try:
