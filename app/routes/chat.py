@@ -115,17 +115,10 @@ def submit_feedback():
         improvement_suggestion = data.get('improvement_suggestion', '').strip()
         conversation_id = data.get('conversation_id')
 
-        # Validate conversation_id is an integer
-        if conversation_id:
-            # Check if it's a fake session ID (starts with 'session_')
-            if isinstance(conversation_id, str) and conversation_id.startswith('session_'):
-                return jsonify({'error': 'Invalid conversation ID - please send a message first'}), 400
-
-            # Try to convert to integer
-            try:
-                conversation_id = int(conversation_id)
-            except (ValueError, TypeError):
-                return jsonify({'error': 'Invalid conversation ID format'}), 400
+        # Accept conversation_id as-is (can be integer or string like 'session_xxx')
+        # SQLite supports storing strings in INTEGER columns due to type affinity
+        if not conversation_id:
+            return jsonify({'error': 'Conversation ID is required'}), 400
         
         # Validate ratings
         for rating_name, rating_value in [
