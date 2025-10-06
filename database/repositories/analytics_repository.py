@@ -372,15 +372,31 @@ class AnalyticsRepository:
             ] if intent_dist_query else []
 
             # Sentiment analysis - get from messages
-            sentiment_query = db.session.query(Message.sentiment_score).filter(
+            # Use aggregated queries instead of loading all messages
+            sentiment_avg_query = db.session.query(
+                db.func.avg(Message.sentiment_score)
+            ).filter(
                 Message.timestamp >= cutoff_date,
                 Message.sentiment_score.isnot(None)
-            ).all()
+            ).scalar()
 
-            positive_count = sum(1 for s in sentiment_query if s.sentiment_score and s.sentiment_score > 0.1)
-            neutral_count = sum(1 for s in sentiment_query if s.sentiment_score and -0.1 <= s.sentiment_score <= 0.1)
-            negative_count = sum(1 for s in sentiment_query if s.sentiment_score and s.sentiment_score < -0.1)
-            avg_sentiment = sum(s.sentiment_score for s in sentiment_query if s.sentiment_score) / len(sentiment_query) if sentiment_query else 0
+            positive_count = db.session.query(db.func.count(Message.id)).filter(
+                Message.timestamp >= cutoff_date,
+                Message.sentiment_score > 0.1
+            ).scalar()
+
+            neutral_count = db.session.query(db.func.count(Message.id)).filter(
+                Message.timestamp >= cutoff_date,
+                Message.sentiment_score >= -0.1,
+                Message.sentiment_score <= 0.1
+            ).scalar()
+
+            negative_count = db.session.query(db.func.count(Message.id)).filter(
+                Message.timestamp >= cutoff_date,
+                Message.sentiment_score < -0.1
+            ).scalar()
+
+            avg_sentiment = sentiment_avg_query if sentiment_avg_query else 0
 
             sentiment_data_detailed = {
                 'positive_count': positive_count,
@@ -402,8 +418,11 @@ class AnalyticsRepository:
                     hourly_activity[hour] = hour_data.count
 
             # Crop trends - get from conversations
+            # OPTIMIZED: Limit to 1000 most recent conversations to prevent memory issues
             crop_counts = {}
-            for conv in Conversation.query.filter(Conversation.start_time >= cutoff_date).all():
+            for conv in Conversation.query.filter(
+                Conversation.start_time >= cutoff_date
+            ).order_by(Conversation.id.desc()).limit(1000).all():
                 if hasattr(conv, 'get_mentioned_crops'):
                     for crop in conv.get_mentioned_crops():
                         crop_name = crop.lower().capitalize()
@@ -416,17 +435,16 @@ class AnalyticsRepository:
             ]
 
             # Confidence distribution - group confidence scores into buckets
-            confidence_scores = db.session.query(Message.confidence_score).filter(
-                Message.timestamp >= cutoff_date,
-                Message.confidence_score.isnot(None)
-            ).all()
-
-            # Create distribution buckets (0.0-0.1, 0.1-0.2, ..., 0.9-1.0)
+            # Use aggregated queries instead of loading all scores
             confidence_distribution = []
             for i in range(10):
                 bucket_start = i / 10
                 bucket_end = (i + 1) / 10
-                count = sum(1 for s in confidence_scores if s.confidence_score and bucket_start <= s.confidence_score < bucket_end)
+                count = db.session.query(db.func.count(Message.id)).filter(
+                    Message.timestamp >= cutoff_date,
+                    Message.confidence_score >= bucket_start,
+                    Message.confidence_score < bucket_end
+                ).scalar()
                 confidence_distribution.append({'score': (bucket_start + bucket_end) / 2, 'count': count})
 
             # User statistics (for charts and detailed analysis)
