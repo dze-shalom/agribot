@@ -1036,10 +1036,19 @@ def get_detailed_analytics():
         intent_data = [{'intent': i[0], 'count': i[1]} for i in intents]
 
         # Hourly activity (messages per hour of day)
-        hourly_activity = db.session.query(
-            func.strftime('%H', Message.timestamp).label('hour'),
-            func.count(Message.id).label('count')
-        ).group_by('hour').all()
+        # Use database-agnostic approach
+        try:
+            # Try PostgreSQL EXTRACT function
+            hourly_activity = db.session.query(
+                func.extract('hour', Message.timestamp).label('hour'),
+                func.count(Message.id).label('count')
+            ).group_by('hour').all()
+        except:
+            # Fallback to SQLite strftime
+            hourly_activity = db.session.query(
+                func.strftime('%H', Message.timestamp).label('hour'),
+                func.count(Message.id).label('count')
+            ).group_by('hour').all()
 
         hourly_data = {int(h[0]): h[1] for h in hourly_activity if h[0]}
         hourly_formatted = [hourly_data.get(h, 0) for h in range(24)]
@@ -1069,12 +1078,20 @@ def get_detailed_analytics():
         crop_trends = [{'crop': k, 'mentions': v} for k, v in sorted(crop_mentions.items(), key=lambda x: x[1], reverse=True)[:10]]
 
         # Response quality metrics
-        confidence_distribution = db.session.query(
-            func.round(Message.confidence_score, 1).label('confidence'),
-            func.count(Message.id).label('count')
-        ).filter(Message.confidence_score.isnot(None)).group_by('confidence').all()
-
-        confidence_data = [{'score': float(c[0]), 'count': c[1]} for c in confidence_distribution if c[0]]
+        try:
+            # Try with ROUND function (works in PostgreSQL and SQLite)
+            confidence_distribution = db.session.query(
+                func.round(Message.confidence_score, 1).label('confidence'),
+                func.count(Message.id).label('count')
+            ).filter(Message.confidence_score.isnot(None)).group_by('confidence').all()
+            confidence_data = [{'score': float(c[0]), 'count': c[1]} for c in confidence_distribution if c[0]]
+        except:
+            # Fallback: just get all confidence scores without rounding
+            confidence_distribution = db.session.query(
+                Message.confidence_score,
+                func.count(Message.id).label('count')
+            ).filter(Message.confidence_score.isnot(None)).group_by(Message.confidence_score).all()
+            confidence_data = [{'score': float(c[0]), 'count': c[1]} for c in confidence_distribution if c[0]]
 
         # Sentiment distribution
         sentiment_stats = db.session.query(
