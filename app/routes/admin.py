@@ -577,25 +577,13 @@ def export_ml_training_dataset(start_date, end_date):
 
     messages = messages_query.all()
 
-    # Get all feedback and organize by conversation_id (both int and string session IDs)
+    # Get all feedback
     all_feedback = Feedback.query.all()
     feedback_by_conv = {}
     for fb in all_feedback:
-        # Store feedback by both string and int representations
-        conv_id = fb.conversation_id
-        if conv_id not in feedback_by_conv:
-            feedback_by_conv[conv_id] = []
-        feedback_by_conv[conv_id].append(fb)
-
-        # Also store by string version of int IDs for easier matching
-        try:
-            if isinstance(conv_id, int):
-                str_id = str(conv_id)
-                if str_id not in feedback_by_conv:
-                    feedback_by_conv[str_id] = []
-                feedback_by_conv[str_id].append(fb)
-        except:
-            pass
+        if fb.conversation_id not in feedback_by_conv:
+            feedback_by_conv[fb.conversation_id] = []
+        feedback_by_conv[fb.conversation_id].append(fb)
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -613,17 +601,9 @@ def export_ml_training_dataset(start_date, end_date):
         conv = msg.conversation
         feedback = None
 
-        # Match feedback by conversation ID - try both int and string versions
-        if conv:
-            # Try matching by integer ID
-            if conv.id in feedback_by_conv:
-                conv_feedbacks = feedback_by_conv[conv.id]
-            # Try matching by string ID
-            elif str(conv.id) in feedback_by_conv:
-                conv_feedbacks = feedback_by_conv[str(conv.id)]
-            else:
-                conv_feedbacks = []
-
+        # Match feedback by conversation ID (not session_id)
+        if conv and conv.id in feedback_by_conv:
+            conv_feedbacks = feedback_by_conv[conv.id]
             if conv_feedbacks:
                 # Get most recent feedback for this conversation
                 conv_feedbacks.sort(key=lambda f: f.timestamp if f.timestamp else datetime.min, reverse=True)

@@ -75,11 +75,10 @@ class Analytics(db.Model):
 class Feedback(db.Model):
     """User feedback model for collecting user satisfaction data"""
     __tablename__ = 'feedback'
-
+    
     # Primary key and relationships
     id = db.Column(db.Integer, primary_key=True)
-    # Keep as Integer for backward compatibility - SQLite allows string values anyway
-    conversation_id = db.Column(db.Integer, nullable=False)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     # Feedback ratings (1-5 scale)
