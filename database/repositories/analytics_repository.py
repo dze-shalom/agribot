@@ -70,50 +70,65 @@ class AnalyticsRepository:
         """Get satisfaction metrics for the last N days"""
         try:
             cutoff_date = datetime.utcnow() - timedelta(days=days)
-            
+
             # Total feedback count
             total_feedback = Feedback.query.filter(Feedback.timestamp >= cutoff_date).count()
-            
+
             if total_feedback == 0:
                 return {
                     'total_feedback': 0,
                     'satisfaction_rate': 0,
                     'avg_overall_rating': 0,
                     'avg_accuracy_rating': 0,
-                    'avg_completeness_rating': 0
+                    'avg_completeness_rating': 0,
+                    'feedback_response_rate': 0
                 }
-            
+
             # Helpful feedback percentage
             helpful_count = Feedback.query.filter(
                 Feedback.timestamp >= cutoff_date,
                 Feedback.helpful == True
             ).count()
-            
+
             satisfaction_rate = (helpful_count / total_feedback * 100) if total_feedback > 0 else 0
-            
+
             # Average ratings
             ratings_query = db.session.query(
                 db.func.avg(Feedback.overall_rating),
-                db.func.avg(Feedback.accuracy_rating), 
+                db.func.avg(Feedback.accuracy_rating),
                 db.func.avg(Feedback.completeness_rating)
             ).filter(Feedback.timestamp >= cutoff_date)
-            
+
             avg_overall, avg_accuracy, avg_completeness = ratings_query.first()
-            
+
+            # Calculate feedback response rate
+            try:
+                total_conversations = Conversation.query.filter(
+                    Conversation.start_time >= cutoff_date
+                ).count()
+                feedback_response_rate = round((total_feedback / total_conversations * 100) if total_conversations > 0 else 0, 2)
+            except:
+                feedback_response_rate = 0
+
             return {
                 'total_feedback': total_feedback,
                 'satisfaction_rate': round(satisfaction_rate, 2),
                 'avg_overall_rating': round(avg_overall or 0, 2),
                 'avg_accuracy_rating': round(avg_accuracy or 0, 2),
                 'avg_completeness_rating': round(avg_completeness or 0, 2),
-                'feedback_response_rate': round((total_feedback / Conversation.query.filter(
-                    Conversation.start_time >= cutoff_date
-                ).count() * 100) if Conversation.query.filter(
-                    Conversation.start_time >= cutoff_date
-                ).count() > 0 else 0, 2)
+                'feedback_response_rate': feedback_response_rate
             }
         except Exception as e:
-            raise DatabaseError(f"Failed to get satisfaction metrics: {str(e)}")
+            # Return empty metrics instead of raising error
+            print(f"Warning: Failed to get satisfaction metrics: {str(e)}")
+            return {
+                'total_feedback': 0,
+                'satisfaction_rate': 0,
+                'avg_overall_rating': 0,
+                'avg_accuracy_rating': 0,
+                'avg_completeness_rating': 0,
+                'feedback_response_rate': 0
+            }
     
     @staticmethod
     def get_recent_feedback(limit: int = 10) -> List[Feedback]:
@@ -307,28 +322,41 @@ class AnalyticsRepository:
 
             # User Satisfaction - based on feedback (with region filter)
             # Join directly with User using user_id from Feedback table
-            feedback_query_base = Feedback.query.join(User, Feedback.user_id == User.id).filter(Feedback.timestamp >= cutoff_date)
-            if region != 'all':
-                feedback_query_base = feedback_query_base.filter(User.region == region)
+            try:
+                feedback_query_base = Feedback.query.join(User, Feedback.user_id == User.id).filter(Feedback.timestamp >= cutoff_date)
+                if region != 'all':
+                    feedback_query_base = feedback_query_base.filter(User.region == region)
 
-            positive_feedback = feedback_query_base.filter(Feedback.helpful == True).count()
-            total_feedback = feedback_query_base.filter(Feedback.helpful.isnot(None)).count()
+                positive_feedback = feedback_query_base.filter(Feedback.helpful == True).count()
+                total_feedback = feedback_query_base.filter(Feedback.helpful.isnot(None)).count()
 
-            satisfaction_rate = round((positive_feedback / total_feedback * 100) if total_feedback > 0 else 0.0, 1)
+                satisfaction_rate = round((positive_feedback / total_feedback * 100) if total_feedback > 0 else 0.0, 1)
+            except Exception as e:
+                # Handle case where feedback queries might fail (e.g., before migration)
+                print(f"Warning: Could not calculate satisfaction from feedback: {str(e)}")
+                positive_feedback = 0
+                total_feedback = 0
+                satisfaction_rate = 0.0
 
             # Average rating from detailed feedback (with region filter)
             # Join directly with User using user_id from Feedback table
-            rating_query = db.session.query(db.func.avg(Feedback.overall_rating))\
-                .join(User, Feedback.user_id == User.id)\
-                .filter(
-                    Feedback.timestamp >= cutoff_date,
-                    Feedback.overall_rating.isnot(None)
-                )
-            if region != 'all':
-                rating_query = rating_query.filter(User.region == region)
+            try:
+                rating_query = db.session.query(db.func.avg(Feedback.overall_rating))\
+                    .join(User, Feedback.user_id == User.id)\
+                    .filter(
+                        Feedback.timestamp >= cutoff_date,
+                        Feedback.overall_rating.isnot(None)
+                    )
+                if region != 'all':
+                    rating_query = rating_query.filter(User.region == region)
 
-            avg_rating = rating_query.scalar()
-            user_satisfaction_score = round(avg_rating if avg_rating else 0.0, 1)
+                avg_rating = rating_query.scalar()
+                user_satisfaction_score = round(avg_rating if avg_rating else 0.0, 1)
+            except Exception as e:
+                # Handle case where rating queries might fail (e.g., before migration)
+                print(f"Warning: Could not calculate rating from feedback: {str(e)}")
+                avg_rating = 0
+                user_satisfaction_score = 0.0
 
             # Satisfaction metrics
             satisfaction_data = AnalyticsRepository.get_satisfaction_metrics(days)
