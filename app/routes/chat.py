@@ -69,11 +69,12 @@ def process_message():
             language=language,
             include_external_data=include_external_data
         )
-        
-        # Return response
+
+        # Return response with conversation_id at top level for frontend
         return jsonify({
             'success': True,
             'data': response_data,
+            'conversation_id': response_data.get('conversation_id'),  # Extract for frontend feedback
             'timestamp': datetime.now().isoformat()
         })
         
