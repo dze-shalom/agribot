@@ -78,8 +78,8 @@ class Feedback(db.Model):
 
     # Primary key and relationships
     id = db.Column(db.Integer, primary_key=True)
-    # Allow string to support temporary session IDs before conversation is persisted
-    conversation_id = db.Column(db.String(100), nullable=False)
+    # Keep as Integer for backward compatibility - SQLite allows string values anyway
+    conversation_id = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     # Feedback ratings (1-5 scale)

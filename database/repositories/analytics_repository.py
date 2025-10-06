@@ -34,12 +34,8 @@ class AnalyticsRepository:
             improvement_suggestion: Text suggestion
         """
         try:
-            # Convert conversation_id to string to ensure consistency
-            if isinstance(conversation_id, int):
-                conversation_id = str(conversation_id)
-            elif not isinstance(conversation_id, str):
-                conversation_id = str(conversation_id)
-
+            # SQLite allows strings in INTEGER columns due to type affinity
+            # Just pass through as-is
             feedback = Feedback(
                 conversation_id=conversation_id,
                 user_id=user_id,
