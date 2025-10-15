@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 import csv
 import io
 import logging
-from database.models.user import User
+from database.models.user import User, UserStatus
 from database.models.conversation import Conversation
 from database.models.analytics import Analytics
 from database.repositories.analytics_repository import AnalyticsRepository
@@ -489,18 +489,31 @@ def get_regional_distribution():
         from sqlalchemy import func
         from database.models.user import User
 
+        # Optional country filter
+        country = request.args.get('country')
+
         # Get regional distribution with user counts
-        regional_data = db.session.query(
+        query = db.session.query(
             User.region,
             func.count(User.id).label('count')
-        ).group_by(User.region).all()
+        ).filter(User.status != UserStatus.DELETED)
 
-        distribution = {}
+        if country:
+            query = query.filter(User.country == country)
+
+        regional_data = query.group_by(User.region).all()
+
+        # Normalize region names (case-insensitive) to avoid duplicates
+        temp = {}
         for region, count in regional_data:
-            if region:
-                # Handle Enum values properly
-                region_name = region.value if hasattr(region, 'value') else region
-                distribution[region_name] = count
+            if not region:
+                continue
+            region_name = region.value if hasattr(region, 'value') else region
+            key = str(region_name).strip().lower()
+            temp[key] = temp.get(key, 0) + count
+
+        # Return a clean distribution with Title-cased region labels
+        distribution = {k.title().replace('_', ' '): v for k, v in temp.items()}
 
         return jsonify({
             'success': True,
@@ -509,6 +522,18 @@ def get_regional_distribution():
 
     except Exception as e:
         return jsonify({'error': 'Failed to get regional distribution', 'details': str(e)}), 500
+
+
+@auth_bp.route('/admin/analytics/countries', methods=['GET'])
+@admin_required
+def get_analytics_countries():
+    """Return distinct list of countries with users"""
+    try:
+        from database.models.user import User
+        countries = [c[0] for c in db.session.query(User.country).distinct().all()]
+        return jsonify({'success': True, 'countries': countries})
+    except Exception as e:
+        return jsonify({'error': 'Failed to get countries', 'details': str(e)}), 500
 
 @auth_bp.route('/admin/analytics/crop-inquiries', methods=['GET'])
 @admin_required

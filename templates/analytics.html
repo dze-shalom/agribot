@@ -1784,6 +1784,15 @@
                 // Load real analytics data from API with region filter
                 const regionParam = selectedRegion !== 'all' ? `?region=${selectedRegion}` : '';
                 const response = await fetch(`/api/auth/admin/analytics/overview${regionParam}`);
+                if (!response.ok) {
+                    // If unauthorized, show helpful message and stop
+                    if (response.status === 401) {
+                        console.warn('Not authenticated for admin overview (401)');
+                        showNotification('Please login as an administrator to view analytics', 'error');
+                        return;
+                    }
+                    throw new Error(`Failed to load overview (status ${response.status})`);
+                }
                 const data = await response.json();
 
                 if (data.overview) {
@@ -1888,7 +1897,23 @@
                 // Load activity trends with region filter
                 const regionParam = selectedRegion !== 'all' ? `&region=${selectedRegion}` : '';
                 const activityResponse = await fetch(`/api/auth/admin/analytics/activity-trends?days=7${regionParam}`);
-                const activityData = await activityResponse.json();
+                if (!activityResponse.ok) {
+                    if (activityResponse.status === 401) {
+                        showNotification('Please login as an administrator to view activity trends', 'error');
+                    } else {
+                        console.warn('Activity trends fetch failed', activityResponse.status);
+                    }
+                } else {
+                    const activityData = await activityResponse.json();
+
+                    if (activityData.success) {
+                        // Update activity chart
+                        charts.activity.data.labels = activityData.labels;
+                        charts.activity.data.datasets[0].data = activityData.new_users;
+                        charts.activity.data.datasets[1].data = activityData.conversations;
+                        charts.activity.update();
+                    }
+                }
 
                 if (activityData.success) {
                     // Update activity chart
@@ -1898,19 +1923,24 @@
                     charts.activity.update();
                 }
 
-                // Load regional distribution
-                const regionalResponse = await fetch('/api/auth/admin/analytics/regional-distribution');
-                const regionalData = await regionalResponse.json();
+                // Load regional distribution (honor selectedCountry if provided)
+                const countryParam = selectedCountry && selectedCountry !== 'all' ? `?country=${encodeURIComponent(selectedCountry)}` : '';
+                const regionalResponse = await fetch(`/api/auth/admin/analytics/regional-distribution${countryParam}`);
+                if (regionalResponse.ok) {
+                    const regionalData = await regionalResponse.json();
+                    if (regionalData.success && regionalData.distribution) {
+                        const distribution = regionalData.distribution;
+                        const labels = Object.keys(distribution).map(key => capitalizeFirst(key));
+                        const values = Object.values(distribution);
 
-                if (regionalData.success && regionalData.distribution) {
-                    const distribution = regionalData.distribution;
-                    const labels = Object.keys(distribution).map(key => capitalizeFirst(key));
-                    const values = Object.values(distribution);
-
-                    // Update region chart
-                    charts.region.data.labels = labels;
-                    charts.region.data.datasets[0].data = values;
-                    charts.region.update();
+                        // Update region chart with unique colors per region
+                        charts.region.data.labels = labels;
+                        charts.region.data.datasets[0].data = values;
+                        charts.region.data.datasets[0].backgroundColor = generatePalette(labels.length);
+                        charts.region.update();
+                    }
+                } else if (regionalResponse.status === 401) {
+                    showNotification('Please login as an administrator to view regional distribution', 'error');
                 }
             } catch (error) {
                 console.error('Error loading chart data:', error);
@@ -2022,6 +2052,68 @@
             if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
             return time.toLocaleDateString();
         }
+
+        // Selected country for region filtering (default 'all')
+        let selectedCountry = 'all';
+
+        // Generate a visually distinct palette using HSL
+        function generatePalette(count) {
+            const colors = [];
+            for (let i = 0; i < count; i++) {
+                const hue = Math.round((i * 360 / count) % 360);
+                const saturation = 65; // keep saturation high for vivid colors
+                const lightness = 55; // comfortable mid-lightness
+                colors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+            }
+            return colors;
+        }
+
+        // Stable color assignment per region using localStorage
+        function getRegionColor(regionName) {
+            try {
+                const key = 'analytics_region_colors_v1';
+                const raw = localStorage.getItem(key);
+                const map = raw ? JSON.parse(raw) : {};
+                if (map[regionName]) return map[regionName];
+
+                // Assign a new color
+                const existingColors = Object.values(map || {});
+                const palette = generatePalette(Math.max(6, existingColors.length + 3));
+                // pick first unused color
+                const color = palette.find(c => !existingColors.includes(c)) || palette[0];
+                map[regionName] = color;
+                localStorage.setItem(key, JSON.stringify(map));
+                return color;
+            } catch (e) {
+                return generatePalette(1)[0];
+            }
+        }
+
+    // Load available countries into the region filter dropdown
+    async function loadCountryFilters() {
+            const select = document.getElementById('countryFilterForRegions');
+            if (!select) return;
+
+            try {
+                // Try admin analytics countries endpoint first
+                const resp = await fetch('/api/auth/admin/analytics/countries');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const countries = (data && data.countries) ? data.countries : ['All'];
+                    // Populate dropdown
+                    select.innerHTML = `<option value="all">All Countries</option>` + countries.map(c => `<option value="${c}">${c}</option>`).join('');
+                    return;
+                }
+            } catch (e) {
+                // ignore and fallback
+            }
+
+            // Fallback list if endpoint not available
+            const fallback = ['Cameroon', 'Nigeria', 'Ghana', 'Kenya'];
+            select.innerHTML = `<option value="all">All Countries</option>` + fallback.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        // NOTE: filterRegionsByCountry is defined later (after analytics data is loaded)
 
         // Load Regional Insights
         async function loadRegionalInsights() {
@@ -2151,7 +2243,18 @@
 
             try {
                 const response = await fetch('/api/auth/admin/knowledge-transfer');
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        conversationsSection.innerHTML = `
+                            <div style="padding: 40px; text-align: center; color: #e74c3c;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <p>Please login as an administrator to view knowledge transfer data.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    throw new Error(`Failed to load knowledge transfer (status ${response.status})`);
+                }
 
                 const data = await response.json();
 
@@ -2269,6 +2372,73 @@
                         <p style="color: #666;">${error.message}</p>
                         <button onclick="loadConversationsData()" style="background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 15px;">
                             <i class="fas fa-redo"></i> Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Load Insights Data
+        async function loadInsightsData() {
+            console.log('Loading AI insights...');
+
+            const insightsSection = document.querySelector('#insights-section .content-area');
+            if (!insightsSection) return;
+
+            insightsSection.innerHTML = `
+                <div style="padding: 20px; text-align: center;">
+                    <div class="spinner" style="border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+                    <p style="color: #666;">Analyzing system data...</p>
+                </div>
+            `;
+
+            try {
+                // Use Promise.allSettled so one slow/missing endpoint doesn't block the rest
+                const results = await Promise.allSettled([
+                    fetch('/api/auth/admin/analytics/overview'),
+                    fetch('/api/auth/admin/analytics/detailed'),
+                    fetch('/api/auth/admin/knowledge-transfer')
+                ]);
+
+                const overviewResponse = results[0].status === 'fulfilled' ? results[0].value : null;
+                const detailedResponse = results[1].status === 'fulfilled' ? results[1].value : null;
+                const knowledgeResponse = results[2].status === 'fulfilled' ? results[2].value : null;
+
+                let overviewData = null, detailedData = null, knowledgeData = null;
+
+                if (overviewResponse && overviewResponse.ok) overviewData = await overviewResponse.json().catch(() => null);
+                if (detailedResponse && detailedResponse.ok) detailedData = await detailedResponse.json().catch(() => null);
+                if (knowledgeResponse && knowledgeResponse.ok) knowledgeData = await knowledgeResponse.json().catch(() => null);
+
+                if (overviewData && overviewData.overview && detailedData && detailedData.success && knowledgeData && knowledgeData.success) {
+                    const insights = generateActionableInsights(overviewData.overview, detailedData, knowledgeData);
+
+                    insightsSection.innerHTML = `
+                        <div style="padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                                <h3 style="margin: 0; font-size: 24px; color: #2c3e50;">Actionable Intelligence</h3>
+                                <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;">LIVE ANALYSIS</span>
+                            </div>
+                            ${insights.html}
+                        </div>
+                    `;
+                } else {
+                    console.warn('Some insight data endpoints returned no usable data', { overviewData, detailedData, knowledgeData });
+                    insightsSection.innerHTML = `
+                        <div style="padding: 40px; text-align: center; color: #e74c3c;">
+                            <i class="fas fa-exclamation-circle"></i> Failed to load intelligence data. Ensure you are logged in and the required endpoints are available.
+                        </div>
+                    `;
+                    return;
+                }
+            } catch (error) {
+                console.error('Error loading insights:', error);
+                insightsSection.innerHTML = `
+                    <div style="padding: 40px; text-align: center;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #e74c3c; margin-bottom: 15px;"></i>
+                        <p style="color: #e74c3c; font-weight: bold; margin-bottom: 10px;">Failed to load intelligence data</p>
+                        <button onclick="loadInsightsData()" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600;">
+                            <i class="fas fa-redo"></i> Retry Analysis
                         </button>
                     </div>
                 `;
@@ -2535,7 +2705,7 @@
                             labels: data.regional_distribution.map(r => r.region),
                             datasets: [{
                                 data: data.regional_distribution.map(r => r.count),
-                                backgroundColor: ['#27ae60', '#f39c12', '#e74c3c', '#3498db', '#9b59b6']
+                                backgroundColor: data.regional_distribution.map(r => getRegionColor((r.region && (r.region.value || r.region)) || r.region))
                             }]
                         },
                         options: {
@@ -2659,17 +2829,22 @@
 
                     // Populate country filter dropdown
                     const countryFilter = document.getElementById('countryFilterForRegions');
-                    if (countryFilter && data.country_distribution) {
-                        // Clear existing options except "All Countries"
-                        countryFilter.innerHTML = '<option value="all">All Countries</option>';
+                    if (countryFilter) {
+                        if (data && data.country_distribution && data.country_distribution.length > 0) {
+                            // Clear existing options except "All Countries"
+                            countryFilter.innerHTML = '<option value="all">All Countries</option>';
 
-                        // Add country options
-                        data.country_distribution.forEach(c => {
-                            const option = document.createElement('option');
-                            option.value = c.country;
-                            option.textContent = c.country;
-                            countryFilter.appendChild(option);
-                        });
+                            // Add country options
+                            data.country_distribution.forEach(c => {
+                                const option = document.createElement('option');
+                                option.value = c.country;
+                                option.textContent = c.country;
+                                countryFilter.appendChild(option);
+                            });
+                        } else {
+                            // Try to fetch countries from the server or fallback list
+                            loadCountryFilters();
+                        }
                     }
 
                     // Store data globally for filtering
@@ -2703,10 +2878,24 @@
             }
 
             // Update regional chart
-            if (analyticsCharts.regionalChart) {
-                analyticsCharts.regionalChart.data.labels = regionalData.map(r => r.region);
-                analyticsCharts.regionalChart.data.datasets[0].data = regionalData.map(r => r.count);
-                analyticsCharts.regionalChart.update();
+                if (analyticsCharts.regionalChart) {
+                if (!regionalData || regionalData.length === 0) {
+                    // Show friendly message if no regional data for this country
+                    const parent = document.getElementById('regionalChart').parentElement;
+                    parent.querySelector('.chart-card').style.minHeight = '120px';
+                    parent.querySelector('#regionalChart').style.display = 'none';
+                    parent.insertAdjacentHTML('beforeend', '<div id="noRegionalData" style="padding:20px; text-align:center; color:#666;">No regional data available for the selected country.</div>');
+                } else {
+                    // Remove any previous no-data message
+                    const noEl = document.getElementById('noRegionalData');
+                    if (noEl) noEl.remove();
+                    document.getElementById('regionalChart').style.display = '';
+
+                    analyticsCharts.regionalChart.data.labels = regionalData.map(r => r.region);
+                    analyticsCharts.regionalChart.data.datasets[0].data = regionalData.map(r => r.count);
+                    analyticsCharts.regionalChart.data.datasets[0].backgroundColor = regionalData.map(r => getRegionColor(r.region));
+                    analyticsCharts.regionalChart.update();
+                }
             }
         }
 

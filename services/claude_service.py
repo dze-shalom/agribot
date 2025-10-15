@@ -12,8 +12,14 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from datetime import datetime
 
-import anthropic
-from anthropic import Anthropic
+try:
+    import anthropic
+    from anthropic import Anthropic
+    _HAS_ANTHROPIC = True
+except Exception:
+    anthropic = None
+    Anthropic = None
+    _HAS_ANTHROPIC = False
 
 from utils.exceptions import AgriBotException
 
@@ -42,6 +48,9 @@ class ClaudeService:
 
     def __init__(self, api_key: str, agricultural_knowledge: Dict[str, Any]):
         """Initialize Claude service with API key and agricultural context"""
+        if not _HAS_ANTHROPIC:
+            raise RuntimeError('Anthropic package not installed; ClaudeService unavailable')
+
         self.client = Anthropic(api_key=api_key)
         self.agricultural_knowledge = agricultural_knowledge
         self.logger = logging.getLogger(__name__)
