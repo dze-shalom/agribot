@@ -8,7 +8,12 @@ import requests
 import base64
 import logging
 from typing import Dict, Optional, List
-import anthropic
+try:
+    import anthropic
+    _HAS_ANTHROPIC = True
+except Exception:
+    anthropic = None
+    _HAS_ANTHROPIC = False
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +27,7 @@ class PlantIdService:
         self.timeout = 30
 
         # Initialize Anthropic client if API key is available
-        if self.api_key and self.api_key != 'your_api_key_here':
+        if _HAS_ANTHROPIC and self.api_key and self.api_key != 'your_api_key_here':
             try:
                 self.client = anthropic.Anthropic(api_key=self.api_key)
             except Exception as e:
