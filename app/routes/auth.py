@@ -23,6 +23,33 @@ from services.cache.redis_cache import cache_user_session
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 logger = logging.getLogger(__name__)
 
+
+def safe_get_mentioned_crops(conv):
+    """Safely return mentioned crops for a conversation, logging on errors.
+
+    Returns a list (possibly empty) and never raises.
+    """
+    try:
+        if not conv:
+            return []
+        crops = conv.get_mentioned_crops()
+        if not crops:
+            return []
+        # Ensure list of strings
+        return [str(c).strip() for c in crops if c]
+    except Exception as e:
+        # Log minimal info to avoid sensitive data leaks
+        logger.warning(f"Failed to parse mentioned_crops for conv_id={getattr(conv, 'id', 'unknown')}: {str(e)}")
+        try:
+            Analytics.log_event('mentioned_crops_parse_error', {
+                'conversation_id': getattr(conv, 'id', None),
+                'sample_value': (getattr(conv, 'mentioned_crops', None) and str(getattr(conv, 'mentioned_crops'))[:200])
+            })
+        except Exception:
+            # best-effort logging, don't escalate
+            pass
+        return []
+
 def login_required(f):
     """Decorator to require login for protected routes"""
     @wraps(f)
@@ -563,9 +590,9 @@ def get_crop_inquiries():
         # Count crop mentions for current period
         crop_counts = {}
         for conv in conversations:
-            crops = conv.get_mentioned_crops()
+            crops = safe_get_mentioned_crops(conv)
             for crop in crops:
-                crop_name = crop.lower().capitalize()
+                crop_name = str(crop).lower().capitalize()
                 crop_counts[crop_name] = crop_counts.get(crop_name, 0) + 1
 
         # Get previous period data for trend calculation
@@ -582,9 +609,9 @@ def get_crop_inquiries():
 
         previous_crop_counts = {}
         for conv in previous_conversations:
-            crops = conv.get_mentioned_crops()
+            crops = safe_get_mentioned_crops(conv)
             for crop in crops:
-                crop_name = crop.lower().capitalize()
+                crop_name = str(crop).lower().capitalize()
                 previous_crop_counts[crop_name] = previous_crop_counts.get(crop_name, 0) + 1
 
         # Sort by count and get top crops
@@ -799,7 +826,7 @@ def export_ml_dataset():
                     'entities': msg.get_entities(),
                     'user_region': conv.region if conv else None,
                     'conversation_topic': conv.current_topic if conv else None,
-                    'mentioned_crops': list(conv.get_mentioned_crops()) if conv and conv.get_mentioned_crops() else [],
+                    'mentioned_crops': list(safe_get_mentioned_crops(conv)) if conv else [],
                     # Image fields - NEW
                     'has_image': 'Yes' if msg.has_image else 'No',
                     'image_filename': msg.image_filename if msg.has_image else '',
