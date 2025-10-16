@@ -569,13 +569,26 @@ def get_regional_distribution():
 
             distribution_by_country[country_name][region_name] = count
 
+        # Create flat distribution for charts
+        # If country filter is applied, show only that country's regions
+        # Otherwise show all with country prefix
+        if country_filter and country_filter != 'all':
+            # Filtered by specific country - show just region names
+            flat_distribution = {}
+            for country, regions in distribution_by_country.items():
+                for region, count in regions.items():
+                    flat_distribution[region] = count
+        else:
+            # Show all countries - prefix with country name for clarity
+            flat_distribution = {f"{country} - {region}": count
+                               for country, regions in distribution_by_country.items()
+                               for region, count in regions.items()}
+
         return jsonify({
             'success': True,
             'distribution_by_country': distribution_by_country,
-            # Also return flat list for backward compatibility
-            'distribution': {f"{country} - {region}": count
-                           for country, regions in distribution_by_country.items()
-                           for region, count in regions.items()}
+            'distribution': flat_distribution,  # Backward compatible format
+            'country_filter': country_filter  # Let frontend know if filtered
         })
 
     except Exception as e:
