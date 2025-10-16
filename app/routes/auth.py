@@ -1256,6 +1256,22 @@ def get_detailed_analytics():
             logger.warning(f"Sentiment distribution query failed: {str(e)}")
             sentiment_stats = (0, 0, 0, 0)
 
+        # Get country distribution for the country chart
+        try:
+            country_dist = db.session.query(
+                User.country,
+                func.count(User.id).label('count')
+            ).filter(User.status != UserStatus.DELETED).group_by(User.country).all()
+
+            country_distribution = [
+                {'country': c.country or 'Unknown', 'count': c.count}
+                for c in country_dist
+            ]
+        except Exception as e:
+            db.session.rollback()
+            logger.warning(f"Country distribution query failed: {str(e)}")
+            country_distribution = []
+
         response_data = {
             'success': True,
             'intent_distribution': intent_data,
@@ -1263,6 +1279,7 @@ def get_detailed_analytics():
             'regional_distribution': regional_data,
             'crop_trends': crop_trends,
             'confidence_distribution': confidence_data,
+            'country_distribution': country_distribution,  # Added for country chart
             'sentiment': {
                 'average': float(sentiment_stats[0]) if sentiment_stats[0] else 0,
                 'positive_count': sentiment_stats[1],
