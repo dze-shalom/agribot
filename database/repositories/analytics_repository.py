@@ -242,6 +242,28 @@ class AnalyticsRepository:
             }
         except Exception as e:
             raise DatabaseError(f"Failed to get error summary: {str(e)}")
+
+    @staticmethod
+    def safe_get_mentioned_crops(conv):
+        """Defensive wrapper for conv.get_mentioned_crops() used by repository code."""
+        try:
+            if not conv:
+                return []
+            crops = conv.get_mentioned_crops()
+            if not crops:
+                return []
+            return [str(c).strip() for c in crops if c]
+        except Exception as e:
+            # Log an error in the ErrorLog table (best-effort)
+            try:
+                AnalyticsRepository.log_error(
+                    error_type='mentioned_crops_parse_error',
+                    error_message=str(e),
+                    conversation_id=getattr(conv, 'id', None)
+                )
+            except Exception:
+                pass
+            return []
     
     @staticmethod
     def get_comprehensive_analytics(days: int = 30, region: str = 'all') -> Dict[str, Any]:
@@ -423,10 +445,10 @@ class AnalyticsRepository:
             for conv in Conversation.query.filter(
                 Conversation.start_time >= cutoff_date
             ).order_by(Conversation.id.desc()).limit(1000).all():
-                if hasattr(conv, 'get_mentioned_crops'):
-                    for crop in conv.get_mentioned_crops():
-                        crop_name = crop.lower().capitalize()
-                        crop_counts[crop_name] = crop_counts.get(crop_name, 0) + 1
+                # Use defensive accessor to avoid parse errors stopping the whole report
+                for crop in AnalyticsRepository.safe_get_mentioned_crops(conv):
+                    crop_name = str(crop).lower().capitalize()
+                    crop_counts[crop_name] = crop_counts.get(crop_name, 0) + 1
 
             # Get top 10 crops
             crop_trends = [
