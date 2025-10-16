@@ -532,43 +532,54 @@ def get_analytics_overview():
 @auth_bp.route('/admin/analytics/regional-distribution', methods=['GET'])
 @admin_required
 def get_regional_distribution():
-    """Get regional distribution of users"""
+    """Get regional distribution of users grouped by country"""
     try:
         from sqlalchemy import func
         from database.models.user import User
 
         # Optional country filter
-        country = request.args.get('country')
+        country_filter = request.args.get('country')
 
-        # Get regional distribution with user counts
+        # Get distribution grouped by BOTH country and region
         query = db.session.query(
+            User.country,
             User.region,
             func.count(User.id).label('count')
         ).filter(User.status != UserStatus.DELETED)
 
-        if country:
-            query = query.filter(User.country == country)
+        if country_filter and country_filter != 'all':
+            query = query.filter(User.country == country_filter)
 
-        regional_data = query.group_by(User.region).all()
+        # Group by both country and region
+        regional_data = query.group_by(User.country, User.region).all()
 
-        # Normalize region names (case-insensitive) to avoid duplicates
-        temp = {}
-        for region, count in regional_data:
-            if not region:
+        # Organize data by country
+        distribution_by_country = {}
+        for country, region, count in regional_data:
+            if not country or not region:
                 continue
-            region_name = region.value if hasattr(region, 'value') else region
-            key = str(region_name).strip().lower()
-            temp[key] = temp.get(key, 0) + count
 
-        # Return a clean distribution with Title-cased region labels
-        distribution = {k.title().replace('_', ' '): v for k, v in temp.items()}
+            # Normalize country and region names
+            country_name = str(country).strip()
+            region_name = region.value if hasattr(region, 'value') else region
+            region_name = str(region_name).strip().title().replace('_', ' ').replace('-', ' ')
+
+            if country_name not in distribution_by_country:
+                distribution_by_country[country_name] = {}
+
+            distribution_by_country[country_name][region_name] = count
 
         return jsonify({
             'success': True,
-            'distribution': distribution
+            'distribution_by_country': distribution_by_country,
+            # Also return flat list for backward compatibility
+            'distribution': {f"{country} - {region}": count
+                           for country, regions in distribution_by_country.items()
+                           for region, count in regions.items()}
         })
 
     except Exception as e:
+        logger.error(f"Regional distribution error: {str(e)}")
         return jsonify({'error': 'Failed to get regional distribution', 'details': str(e)}), 500
 
 
