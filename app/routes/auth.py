@@ -1213,17 +1213,24 @@ def get_detailed_analytics():
             ).filter(Message.confidence_score.isnot(None)).group_by(func.round(Message.confidence_score, 1)).all()
             confidence_data = [{'score': float(c[0]), 'count': c[1]} for c in confidence_distribution if c[0] is not None]
         except Exception as e:
-            # Fallback: return empty data if query fails
+            # Rollback transaction if query failed
+            db.session.rollback()
             logger.warning(f"Confidence distribution query failed: {str(e)}")
             confidence_data = []
 
         # Sentiment distribution
-        sentiment_stats = db.session.query(
-            func.avg(Message.sentiment_score).label('avg_sentiment'),
-            func.count(Message.id).filter(Message.sentiment_score > 0).label('positive'),
-            func.count(Message.id).filter(Message.sentiment_score < 0).label('negative'),
-            func.count(Message.id).filter(Message.sentiment_score == 0).label('neutral')
-        ).first()
+        try:
+            sentiment_stats = db.session.query(
+                func.avg(Message.sentiment_score).label('avg_sentiment'),
+                func.count(Message.id).filter(Message.sentiment_score > 0).label('positive'),
+                func.count(Message.id).filter(Message.sentiment_score < 0).label('negative'),
+                func.count(Message.id).filter(Message.sentiment_score == 0).label('neutral')
+            ).first()
+        except Exception as e:
+            # Rollback transaction if query failed
+            db.session.rollback()
+            logger.warning(f"Sentiment distribution query failed: {str(e)}")
+            sentiment_stats = (0, 0, 0, 0)
 
         response_data = {
             'success': True,
