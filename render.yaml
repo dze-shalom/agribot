@@ -3,7 +3,7 @@ services:
     name: agribot
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn run:app
+    startCommand: gunicorn --config gunicorn_config.py run:app
     envVars:
       - key: FLASK_ENV
         value: production

@@ -428,7 +428,7 @@ def export_conversations_data(start_date, end_date, format_type):
         user = User.query.get(conv.user_id)
         message_count = Message.query.filter_by(conversation_id=conv.id).count()
         images_count = Message.query.filter_by(conversation_id=conv.id, has_image=True).count()
-        crops = ', '.join(AnalyticsRepository.safe_get_mentioned_crops(conv)) if hasattr(conv, 'get_mentioned_crops') else ''
+        crops = ', '.join(conv.get_mentioned_crops()) if hasattr(conv, 'get_mentioned_crops') else ''
 
         duration = ''
         if conv.end_time and conv.start_time:
@@ -616,7 +616,7 @@ def export_ml_training_dataset(start_date, end_date):
             Message.timestamp > msg.timestamp
         ).order_by(Message.timestamp.asc()).first()
 
-        crops = ', '.join(AnalyticsRepository.safe_get_mentioned_crops(conv)) if conv and hasattr(conv, 'get_mentioned_crops') else ''
+        crops = ', '.join(conv.get_mentioned_crops()) if conv and hasattr(conv, 'get_mentioned_crops') else ''
         entities = str(msg.get_entities()) if hasattr(msg, 'get_entities') else ''
 
         writer.writerow([
@@ -1039,8 +1039,9 @@ def generate_comprehensive_pdf_report():
         # Calculate crop mentions
         crop_counts = Counter()
         for conv in conversations:
-            for crop in AnalyticsRepository.safe_get_mentioned_crops(conv):
-                crop_counts[str(crop).lower().capitalize()] += 1
+            if hasattr(conv, 'get_mentioned_crops'):
+                for crop in conv.get_mentioned_crops():
+                    crop_counts[crop.lower().capitalize()] += 1
 
         if crop_counts:
             top_10_crops = crop_counts.most_common(10)

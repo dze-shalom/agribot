@@ -10,7 +10,6 @@ import tempfile
 import os
 from collections import Counter
 from datetime import datetime, timedelta
-from database.repositories.analytics_repository import AnalyticsRepository
 
 def create_user_growth_chart(users, conversations):
     """Create user growth trend chart"""
@@ -75,8 +74,9 @@ def create_crop_distribution_chart(conversations):
         # Count crop mentions
         crop_counts = Counter()
         for conv in conversations:
-            for crop in AnalyticsRepository.safe_get_mentioned_crops(conv):
-                crop_counts[str(crop).lower().capitalize()] += 1
+            if hasattr(conv, 'get_mentioned_crops'):
+                for crop in conv.get_mentioned_crops():
+                    crop_counts[crop.lower().capitalize()] += 1
 
         if not crop_counts:
             # Create "No data" chart

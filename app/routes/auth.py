@@ -500,12 +500,33 @@ def get_analytics_overview():
         days = request.args.get('days', 30, type=int)
         region = request.args.get('region', 'all')
 
+        # Create cache key for this query
+        cache_key = f"analytics_overview_{days}_{region}"
+
+        # Try to get from cache first (5 minute cache)
+        try:
+            from services.cache.redis_cache import cache
+            cached_data = cache.get(cache_key)
+            if cached_data:
+                logger.info(f"Returning cached analytics overview for {cache_key}")
+                return jsonify(cached_data)
+        except:
+            # Cache might not be available, continue without it
+            pass
+
         # Use the enhanced analytics repository with region filter
         analytics_data = AnalyticsRepository.get_comprehensive_analytics(days, region)
+
+        # Cache the result for 5 minutes
+        try:
+            cache.set(cache_key, analytics_data, timeout=300)
+        except:
+            pass
 
         return jsonify(analytics_data)
 
     except Exception as e:
+        logger.error(f"Analytics overview error: {str(e)}")
         return jsonify({'error': 'Failed to get analytics overview', 'details': str(e)}), 500
 
 @auth_bp.route('/admin/analytics/regional-distribution', methods=['GET'])
@@ -1004,6 +1025,17 @@ def get_knowledge_transfer():
         from database.models.analytics import Feedback
         from collections import Counter
 
+        # Try to get from cache first (5 minute cache)
+        cache_key = "knowledge_transfer"
+        try:
+            from services.cache.redis_cache import cache
+            cached_data = cache.get(cache_key)
+            if cached_data:
+                logger.info("Returning cached knowledge transfer data")
+                return jsonify(cached_data)
+        except:
+            pass
+
         # Total interactions
         total_conversations = Conversation.query.count()
         total_users = User.query.filter_by(account_type='user').count()
@@ -1061,7 +1093,7 @@ def get_knowledge_transfer():
 
         crop_demand = crop_counter.most_common(15)
 
-        return jsonify({
+        response_data = {
             'success': True,
             'overview': {
                 'total_interactions': total_conversations,
@@ -1078,7 +1110,16 @@ def get_knowledge_transfer():
             'knowledge_topics': [{'topic': topic, 'count': count} for topic, count in topic_distribution],
             'regional_reach': [{'region': region, 'users': count} for region, count in regional_adoption],
             'crop_knowledge_demand': [{'crop': crop, 'requests': count} for crop, count in crop_demand]
-        })
+        }
+
+        # Cache the result for 5 minutes
+        try:
+            from services.cache.redis_cache import cache
+            cache.set(cache_key, response_data, timeout=300)
+        except:
+            pass
+
+        return jsonify(response_data)
 
     except Exception as e:
         import traceback
@@ -1095,6 +1136,17 @@ def get_detailed_analytics():
         from database.models.analytics import Feedback
         from sqlalchemy import func
         from collections import Counter
+
+        # Try to get from cache first (5 minute cache)
+        cache_key = "analytics_detailed"
+        try:
+            from services.cache.redis_cache import cache
+            cached_data = cache.get(cache_key)
+            if cached_data:
+                logger.info("Returning cached detailed analytics")
+                return jsonify(cached_data)
+        except:
+            pass
 
         logger.info("Starting analytics queries")
 
@@ -1176,7 +1228,7 @@ def get_detailed_analytics():
             func.count(Message.id).filter(Message.sentiment_score == 0).label('neutral')
         ).first()
 
-        return jsonify({
+        response_data = {
             'success': True,
             'intent_distribution': intent_data,
             'hourly_activity': hourly_formatted,
@@ -1189,7 +1241,16 @@ def get_detailed_analytics():
                 'negative_count': sentiment_stats[2],
                 'neutral_count': sentiment_stats[3]
             }
-        })
+        }
+
+        # Cache the result for 5 minutes
+        try:
+            from services.cache.redis_cache import cache
+            cache.set(cache_key, response_data, timeout=300)
+        except:
+            pass
+
+        return jsonify(response_data)
 
     except Exception as e:
         import traceback
