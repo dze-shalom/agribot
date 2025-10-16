@@ -1210,15 +1210,12 @@ def get_detailed_analytics():
             confidence_distribution = db.session.query(
                 func.round(Message.confidence_score, 1).label('confidence'),
                 func.count(Message.id).label('count')
-            ).filter(Message.confidence_score.isnot(None)).group_by('confidence').all()
-            confidence_data = [{'score': float(c[0]), 'count': c[1]} for c in confidence_distribution if c[0]]
-        except:
-            # Fallback: just get all confidence scores without rounding
-            confidence_distribution = db.session.query(
-                Message.confidence_score,
-                func.count(Message.id).label('count')
-            ).filter(Message.confidence_score.isnot(None)).group_by(Message.confidence_score).all()
-            confidence_data = [{'score': float(c[0]), 'count': c[1]} for c in confidence_distribution if c[0]]
+            ).filter(Message.confidence_score.isnot(None)).group_by(func.round(Message.confidence_score, 1)).all()
+            confidence_data = [{'score': float(c[0]), 'count': c[1]} for c in confidence_distribution if c[0] is not None]
+        except Exception as e:
+            # Fallback: return empty data if query fails
+            logger.warning(f"Confidence distribution query failed: {str(e)}")
+            confidence_data = []
 
         # Sentiment distribution
         sentiment_stats = db.session.query(
