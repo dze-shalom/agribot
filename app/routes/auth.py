@@ -17,7 +17,7 @@ from database.repositories.analytics_repository import AnalyticsRepository
 from database import db
 from utils.validators import validate_email, validate_password
 from utils.exceptions import ValidationError
-from services.cache.redis_cache import cache_user_session
+from services.cache.simple_cache import cache_user_session
 
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
@@ -505,7 +505,7 @@ def get_analytics_overview():
 
         # Try to get from cache first (5 minute cache)
         try:
-            from services.cache.redis_cache import cache
+            from services.cache.simple_cache import cache
             cached_data = cache.get(cache_key)
             if cached_data:
                 logger.info(f"Returning cached analytics overview for {cache_key}")
@@ -1028,7 +1028,7 @@ def get_knowledge_transfer():
         # Try to get from cache first (5 minute cache)
         cache_key = "knowledge_transfer"
         try:
-            from services.cache.redis_cache import cache
+            from services.cache.simple_cache import cache
             cached_data = cache.get(cache_key)
             if cached_data:
                 logger.info("Returning cached knowledge transfer data")
@@ -1114,7 +1114,7 @@ def get_knowledge_transfer():
 
         # Cache the result for 5 minutes
         try:
-            from services.cache.redis_cache import cache
+            from services.cache.simple_cache import cache
             cache.set(cache_key, response_data, timeout=300)
         except:
             pass
@@ -1140,7 +1140,7 @@ def get_detailed_analytics():
         # Try to get from cache first (5 minute cache)
         cache_key = "analytics_detailed"
         try:
-            from services.cache.redis_cache import cache
+            from services.cache.simple_cache import cache
             cached_data = cache.get(cache_key)
             if cached_data:
                 logger.info("Returning cached detailed analytics")
@@ -1245,7 +1245,7 @@ def get_detailed_analytics():
 
         # Cache the result for 5 minutes
         try:
-            from services.cache.redis_cache import cache
+            from services.cache.simple_cache import cache
             cache.set(cache_key, response_data, timeout=300)
         except:
             pass
