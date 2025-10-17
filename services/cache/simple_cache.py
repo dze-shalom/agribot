@@ -85,12 +85,12 @@ def get_cache():
             config = CacheConfig()
             if config.enabled:
                 _cache_instance = RedisCache(config)
-                print("✅ Using Redis cache")
+                print("Using Redis cache")
             else:
                 raise Exception("Redis not enabled")
         except Exception as e:
             # Fall back to simple in-memory cache
-            print(f"⚠️  Redis unavailable ({str(e)}), using in-memory cache")
+            print(f"Redis unavailable ({str(e)}), using in-memory cache")
             _cache_instance = SimpleCache()
 
     return _cache_instance
