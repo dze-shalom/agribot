@@ -975,6 +975,25 @@
             box-shadow: 0 8px 24px rgba(102, 126, 234, 0.6);
         }
 
+        .sidebar.mobile-open {
+            left: 0;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 0;
@@ -1380,6 +1399,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
             loadUserLanguage();
+            checkAuthentication();
             updateSessionInfo('Enhanced AI ready');
         });
 
@@ -1415,7 +1435,9 @@
                 }
             });
 
-            sendButton.addEventListener('click', sendMessage);
+            // Send button click handler is managed dynamically in sendMessage function
+            // Initial setup
+            sendButton.onclick = sendMessage;
 
             // Auto-save user preferences
             document.getElementById('userName').addEventListener('change', function() {
@@ -2059,7 +2081,7 @@
             } finally {
                 // Reset button to send mode
                 sendButton.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z" fill="currentColor"/></svg>';
-                sendButton.onclick = null;
+                sendButton.onclick = sendMessage; // Restore send functionality
                 sendButton.disabled = false;
                 currentAbortController = null;
                 messageInput.focus();
@@ -2739,6 +2761,21 @@
             attachButton.onclick = () => {
                 imageInput.click();
             };
+        }
+
+        // Handle image preview removal
+        const removeImageBtn = document.getElementById('removeImageBtn');
+        if (removeImageBtn) {
+            removeImageBtn.addEventListener('click', function() {
+                const imagePreview = document.getElementById('imagePreview');
+                const imageInput = document.getElementById('imageInput');
+                if (imagePreview) {
+                    imagePreview.style.display = 'none';
+                }
+                if (imageInput) {
+                    imageInput.value = '';
+                }
+            });
         }
 
         // Toggle mobile sidebar
