@@ -975,6 +975,25 @@
             box-shadow: 0 8px 24px rgba(102, 126, 234, 0.6);
         }
 
+        .sidebar.mobile-open {
+            left: 0;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 0;
@@ -1362,6 +1381,8 @@
         let showDebug = false;
         let currentUser = null;
         let currentAbortController = null; // For canceling requests
+        let sessionInfoInterval = null; // For session info updates
+        let saveStateInterval = null; // For auto-saving conversation state
 
         // DOM elements
         const messagesContainer = document.getElementById('messagesContainer');
@@ -1380,6 +1401,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
             loadUserLanguage();
+            checkAuthentication();
             updateSessionInfo('Enhanced AI ready');
         });
 
@@ -1415,7 +1437,9 @@
                 }
             });
 
-            sendButton.addEventListener('click', sendMessage);
+            // Send button click handler is managed dynamically in sendMessage function
+            // Initial setup
+            sendButton.onclick = sendMessage;
 
             // Auto-save user preferences
             document.getElementById('userName').addEventListener('change', function() {
@@ -2059,7 +2083,7 @@
             } finally {
                 // Reset button to send mode
                 sendButton.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z" fill="currentColor"/></svg>';
-                sendButton.onclick = null;
+                sendButton.onclick = sendMessage; // Restore send functionality
                 sendButton.disabled = false;
                 currentAbortController = null;
                 messageInput.focus();
@@ -2220,9 +2244,14 @@
         };
 
         // Update session info periodically
-        setInterval(() => {
-            if (sessionInfo.textContent.includes('ready') || sessionInfo.textContent.includes('processed')) {
-                updateSessionInfo(`AI Online • ${new Date().toLocaleTimeString()}`);
+        if (sessionInfoInterval) clearInterval(sessionInfoInterval);
+        sessionInfoInterval = setInterval(() => {
+            try {
+                if (sessionInfo && (sessionInfo.textContent.includes('ready') || sessionInfo.textContent.includes('processed'))) {
+                    updateSessionInfo(`AI Online • ${new Date().toLocaleTimeString()}`);
+                }
+            } catch (error) {
+                console.error('Session info update error:', error);
             }
         }, 30000);
 
@@ -2290,9 +2319,16 @@
             trackEvent('session_end', {
                 duration: sessionDuration,
                 messages_sent: messageCount,
-                avg_confidence: confidenceScores.length > 0 ? 
+                avg_confidence: confidenceScores.length > 0 ?
                     confidenceScores.reduce((a, b) => a + b) / confidenceScores.length : 0
             });
+
+            // Save conversation state before leaving
+            saveConversationState();
+
+            // Cleanup intervals to prevent memory leaks
+            if (sessionInfoInterval) clearInterval(sessionInfoInterval);
+            if (saveStateInterval) clearInterval(saveStateInterval);
         });
 
         // Auto-save conversation state
@@ -2331,7 +2367,15 @@
         loadConversationState();
 
         // Save state periodically and on important events
-        setInterval(saveConversationState, 30000); // Every 30 seconds
+        // Auto-save conversation state periodically
+        if (saveStateInterval) clearInterval(saveStateInterval);
+        saveStateInterval = setInterval(() => {
+            try {
+                saveConversationState();
+            } catch (error) {
+                console.error('Auto-save error:', error);
+            }
+        }, 30000); // Every 30 seconds
 
         // Settings menu toggle
         function toggleSettingsMenu() {
@@ -2739,6 +2783,21 @@
             attachButton.onclick = () => {
                 imageInput.click();
             };
+        }
+
+        // Handle image preview removal
+        const removeImageBtn = document.getElementById('removeImageBtn');
+        if (removeImageBtn) {
+            removeImageBtn.addEventListener('click', function() {
+                const imagePreview = document.getElementById('imagePreview');
+                const imageInput = document.getElementById('imageInput');
+                if (imagePreview) {
+                    imagePreview.style.display = 'none';
+                }
+                if (imageInput) {
+                    imageInput.value = '';
+                }
+            });
         }
 
         // Toggle mobile sidebar
