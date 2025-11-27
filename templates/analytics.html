@@ -2201,26 +2201,34 @@
         }
 
         // Load Section Data
-        function loadSectionData(section) {
-            switch(section) {
-                case 'users':
-                    loadUsersData();
-                    break;
-                case 'conversations':
-                    loadConversationsData();
-                    break;
-                case 'analytics':
-                    loadAnalyticsData();
-                    break;
-                case 'insights':
-                    loadInsightsData();
-                    break;
-                case 'reports':
-                    loadReportsData();
-                    break;
-                case 'settings':
-                    loadSettingsData();
-                    break;
+        async function loadSectionData(section) {
+            try {
+                switch(section) {
+                    case 'users':
+                        await loadUsersData();
+                        break;
+                    case 'conversations':
+                        await loadConversationsData();
+                        break;
+                    case 'analytics':
+                        await loadAnalyticsData();
+                        break;
+                    case 'insights':
+                        await loadInsightsData();
+                        break;
+                    case 'reports':
+                        await loadReportsData();
+                        break;
+                    case 'settings':
+                        await loadSettingsData();
+                        break;
+                    case 'dashboard':
+                        await loadDashboardData();
+                        break;
+                }
+            } catch (error) {
+                console.error(`Error loading ${section} data:`, error);
+                showNotification(`Failed to load ${section} data`, 'error');
             }
         }
 
@@ -3499,16 +3507,45 @@
 
         // Real-time Updates
         function startRealTimeUpdates() {
-            realTimeInterval = setInterval(() => {
-                // Real-time data updates (less frequent for real data)
-                updateStats();
-                loadActivityFeed();
+            // Clear any existing interval to prevent duplicates
+            if (realTimeInterval) {
+                clearInterval(realTimeInterval);
+            }
+
+            realTimeInterval = setInterval(async () => {
+                try {
+                    // Real-time data updates (less frequent for real data)
+                    await updateStats();
+                    await loadActivityFeed();
+                } catch (error) {
+                    console.error('Real-time update error:', error);
+                    // Continue running interval even if one update fails
+                }
             }, 300000); // Update every 5 minutes
         }
 
-        function updateStats() {
-            // Load real data from API
-            loadDashboardData();
+        // Stop real-time updates
+        function stopRealTimeUpdates() {
+            if (realTimeInterval) {
+                clearInterval(realTimeInterval);
+                realTimeInterval = null;
+            }
+        }
+
+        async function updateStats() {
+            // Load data based on current section, not just dashboard
+            try {
+                // Only update if we're on the dashboard section
+                if (currentSection === 'dashboard') {
+                    await loadDashboardData();
+                } else {
+                    // Update the current section's data
+                    await loadSectionData(currentSection);
+                }
+            } catch (error) {
+                console.error('Error updating stats:', error);
+                // Don't throw - let real-time updates continue
+            }
         }
 
         // Filter by Region
