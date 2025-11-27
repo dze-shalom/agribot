@@ -2702,10 +2702,12 @@
                         analyticsCharts.regionalChart = new Chart(regionalCtx, {
                         type: 'pie',
                         data: {
+                            // Labels now include "Country - Region" format for clarity
                             labels: data.regional_distribution.map(r => r.region),
                             datasets: [{
                                 data: data.regional_distribution.map(r => r.count),
-                                backgroundColor: data.regional_distribution.map(r => getRegionColor((r.region && (r.region.value || r.region)) || r.region))
+                                // Generate colors based on the full "Country - Region" string
+                                backgroundColor: data.regional_distribution.map(r => getRegionColor(r.region))
                             }]
                         },
                         options: {
@@ -2730,9 +2732,13 @@
                             onClick: (event, activeElements) => {
                                 if (activeElements.length > 0) {
                                     const index = activeElements[0].index;
-                                    const region = data.regional_distribution[index].region;
-                                    const value = data.regional_distribution[index].count;
-                                    alert(`Region: ${region}\nTotal Messages: ${value}`);
+                                    const regionData = data.regional_distribution[index];
+                                    // regionData now has: region (full), country, region_only, count
+                                    const fullRegion = regionData.region; // "Country - Region"
+                                    const value = regionData.count;
+                                    const total = data.regional_distribution.reduce((sum, r) => sum + r.count, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    alert(`Location: ${fullRegion}\nUsers: ${value} (${percentage}% of total)`);
                                 }
                             }
                         }

@@ -368,16 +368,20 @@ class AnalyticsRepository:
                     regional_by_country[country] = []
                 regional_by_country[country].append({'region': region, 'count': r.count})
 
-            # Also provide flat regional distribution for backwards compatibility
-            regional_dist_query = db.session.query(
-                User.region,
-                db.func.count(User.id).label('count')
-            ).group_by(User.region).all()
-
-            regional_distribution = [
-                {'region': r.region or 'Unknown', 'count': r.count}
-                for r in regional_dist_query
-            ]
+            # Create flat regional distribution with country prefix for clarity
+            # This helps distinguish regions from different countries (e.g., "Cameroon - Centre" vs "Nigeria - Central")
+            regional_distribution = []
+            for country_name, regions_list in regional_by_country.items():
+                for region_data in regions_list:
+                    region_name = region_data['region']
+                    count = region_data['count']
+                    # Add country prefix to avoid confusion between countries
+                    regional_distribution.append({
+                        'region': f"{country_name} - {region_name}",
+                        'country': country_name,
+                        'region_only': region_name,
+                        'count': count
+                    })
 
             # Intent distribution - get from messages
             intent_dist_query = db.session.query(
