@@ -1906,9 +1906,43 @@
                 return;
             }
 
+            // Check localStorage for cached auth status
+            const cachedAuth = localStorage.getItem('agribot_auth_cached');
+            const authTimestamp = localStorage.getItem('agribot_auth_timestamp');
+
+            // If offline and we have cached auth (less than 24 hours old), skip server check
+            if (!navigator.onLine && cachedAuth === 'true') {
+                const cacheAge = Date.now() - parseInt(authTimestamp || '0');
+                const maxCacheAge = 24 * 60 * 60 * 1000; // 24 hours
+
+                if (cacheAge < maxCacheAge) {
+                    console.log('[Auth] Using cached authentication (offline mode)');
+                    // Try to load cached user data
+                    const cachedUser = localStorage.getItem('agribot_user_data');
+                    if (cachedUser) {
+                        try {
+                            currentUser = JSON.parse(cachedUser);
+                            document.getElementById('userName').value = currentUser.name || '';
+                            const regionSelect = document.getElementById('userRegion');
+                            if (regionSelect && currentUser.region) {
+                                regionSelect.value = currentUser.region.toLowerCase();
+                            }
+                        } catch (e) {
+                            console.error('[Auth] Failed to parse cached user data:', e);
+                        }
+                    }
+                    return; // Skip server check
+                }
+            }
+
+            // If online or no valid cache, check with server
             fetch('/api/auth/profile')
                 .then(response => {
                     if (!response.ok) {
+                        // Clear cached auth
+                        localStorage.removeItem('agribot_auth_cached');
+                        localStorage.removeItem('agribot_auth_timestamp');
+                        localStorage.removeItem('agribot_user_data');
                         window.location.href = '/login.html';
                         return;
                     }
@@ -1943,6 +1977,11 @@
                             regionSelect.value = normalizedRegion;
                         }
 
+                        // Cache authentication status and user data
+                        localStorage.setItem('agribot_auth_cached', 'true');
+                        localStorage.setItem('agribot_auth_timestamp', Date.now().toString());
+                        localStorage.setItem('agribot_user_data', JSON.stringify(data.user));
+
                         // Check if user should be redirected to admin panel
                         if (data.user.account_type === 'admin') {
                             window.location.href = '/analytics.html';
@@ -1951,7 +1990,19 @@
                         window.location.href = '/login.html';
                     }
                 })
-                .catch(() => {
+                .catch((error) => {
+                    // If fetch fails and we're offline, check cache
+                    if (!navigator.onLine) {
+                        const cachedAuth = localStorage.getItem('agribot_auth_cached');
+                        if (cachedAuth === 'true') {
+                            console.log('[Auth] Using cached auth due to network error');
+                            return; // Allow offline access
+                        }
+                    }
+
+                    // Otherwise, redirect to login
+                    console.error('[Auth] Check error:', error);
+                    localStorage.removeItem('agribot_auth_cached');
                     window.location.href = '/login.html';
                 });
         }
@@ -2427,6 +2478,48 @@
         async function sendMessage() {
             const message = messageInput.value.trim();
             if (!message || isTyping) return;
+
+            // Check if offline BEFORE trying to send
+            if (!navigator.onLine) {
+                console.log('[Offline] Detected offline mode in sendMessage');
+                // Add user message
+                addMessage(message, 'user');
+
+                // Clear input
+                messageInput.value = '';
+                messageInput.style.height = 'auto';
+
+                // Queue the message
+                if (typeof messageQueue !== 'undefined' && messageQueue) {
+                    try {
+                        await messageQueue.queueMessage({
+                            content: message,
+                            timestamp: Date.now()
+                        });
+
+                        // Add bot response about queuing
+                        addMessage(
+                            'Your message has been queued and will be sent when you\'re back online. ⏰',
+                            'bot'
+                        );
+                        updateSessionInfo(`Message queued (offline)`);
+                        messageCount++;
+                    } catch (error) {
+                        console.error('[Offline] Failed to queue message:', error);
+                        addMessage(
+                            'Sorry, I couldn\'t queue your message. Please try again when you\'re online.',
+                            'bot'
+                        );
+                    }
+                } else {
+                    // Fallback if messageQueue not initialized yet
+                    addMessage(
+                        'Offline mode detected. Your message will be queued once the offline system is ready.',
+                        'bot'
+                    );
+                }
+                return; // Don't try to send to server
+            }
 
             const userName = document.getElementById('userName').value || currentUser?.name || 'Friend';
             const userRegion = document.getElementById('userRegion').value || currentUser?.region || 'centre';
@@ -3414,55 +3507,6 @@
         function handleMessageFailed(data) {
             console.error('[Offline] Message failed:', data.messageId, data.reason);
         }
-
-        /**
-         * Override sendMessage to handle offline queueing
-         */
-        const originalSendMessage = sendMessage;
-
-        window.sendMessage = async function() {
-            const message = messageInput.value.trim();
-
-            if (!message) return;
-
-            // Check if offline
-            if (!navigator.onLine && messageQueue) {
-                try {
-                    // Queue the message
-                    await messageQueue.queueMessage({
-                        content: message,
-                        timestamp: Date.now()
-                    });
-
-                    // Add to UI as queued
-                    addMessage(message, 'user');
-
-                    // Add bot response
-                    addMessage(
-                        'Your message has been queued and will be sent when you\'re back online.',
-                        'bot'
-                    );
-
-                    // Clear input
-                    messageInput.value = '';
-                    messageCount++;
-
-                    updateSessionInfo(`Message queued (offline)`);
-
-                } catch (error) {
-                    console.error('[Offline] Failed to queue message:', error);
-                    addMessage(
-                        'Sorry, I couldn\'t queue your message. Please try again.',
-                        'bot'
-                    );
-                }
-
-                return;
-            }
-
-            // If online, use original function
-            return originalSendMessage.call(this);
-        };
 
         /**
          * Save conversation to IndexedDB
