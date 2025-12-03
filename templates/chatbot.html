@@ -6,7 +6,25 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="AI-powered agricultural assistant for farmers">
+    <meta name="theme-color" content="#22c55e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="AgriBot">
+
     <title>AgriBot - Enhanced AI Farm Assistant v2.0</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/images/icon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/icon-180x180.png">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -54,8 +72,8 @@
 
         .chat-container {
             width: 100%;
-            max-width: 900px;
-            height: 600px;
+            max-width: 1200px;
+            height: clamp(500px, 80vh, 900px);
             background: var(--container-bg);
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
@@ -482,6 +500,63 @@
             height: 8px;
             border-radius: 50%;
             background: #4caf50;
+        }
+
+        /* Offline Indicators */
+        .offline-indicators {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+        }
+
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .connection-status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .connection-status.offline {
+            background: #f8d7da;
+            color: #721c24;
+            animation: pulseOffline 2s infinite;
+        }
+
+        @keyframes pulseOffline {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .queue-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: #fff3cd;
+            color: #856404;
+            font-weight: 500;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .messages-container {
@@ -994,6 +1069,140 @@
             display: block;
         }
 
+        /* ============================================
+           RESPONSIVE DESIGN - MULTIPLE BREAKPOINTS
+           ============================================ */
+
+        /* Large Desktop (1441px and up) */
+        @media (min-width: 1441px) {
+            .chat-container {
+                max-width: 1400px;
+                height: clamp(600px, 85vh, 1000px);
+            }
+
+            .sidebar {
+                width: 320px;
+            }
+
+            .messages-container {
+                padding: 30px 25px;
+            }
+
+            .message-bubble {
+                max-width: 80%;
+                font-size: 15px;
+            }
+        }
+
+        /* Desktop (1025px - 1440px) */
+        @media (min-width: 1025px) and (max-width: 1440px) {
+            .chat-container {
+                max-width: 1200px;
+            }
+
+            .sidebar {
+                width: 280px;
+            }
+        }
+
+        /* Tablet Landscape (769px - 1024px) */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            body {
+                padding: 15px;
+            }
+
+            .chat-container {
+                max-width: 100%;
+                height: clamp(500px, 85vh, 800px);
+            }
+
+            .sidebar {
+                width: 240px;
+            }
+
+            .status-bar {
+                padding: 6px 15px;
+                font-size: 11px;
+            }
+
+            .offline-indicators {
+                gap: 8px;
+            }
+
+            .messages-container {
+                padding: 20px 15px;
+            }
+
+            .message-bubble {
+                max-width: 85%;
+                font-size: 14px;
+            }
+
+            .input-area {
+                padding: 12px;
+            }
+        }
+
+        /* Tablet Portrait & Large Mobile (481px - 768px) */
+        @media (min-width: 481px) and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .chat-container {
+                height: clamp(500px, 90vh, 750px);
+                border-radius: 15px;
+            }
+
+            .sidebar {
+                width: 260px;
+            }
+
+            .status-bar {
+                padding: 6px 12px;
+                font-size: 10px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .offline-indicators {
+                flex-wrap: wrap;
+                gap: 6px;
+                font-size: 10px;
+            }
+
+            .connection-status,
+            .queue-indicator {
+                padding: 3px 8px;
+                font-size: 10px;
+            }
+
+            .messages-container {
+                padding: 15px 12px;
+            }
+
+            .message-bubble {
+                max-width: 90%;
+                font-size: 14px;
+                padding: 10px 15px;
+            }
+
+            .input-area {
+                padding: 10px;
+            }
+
+            .input-actions {
+                gap: 8px;
+            }
+
+            .action-btn {
+                width: 38px;
+                height: 38px;
+                font-size: 16px;
+            }
+        }
+
+        /* Mobile (max-width: 768px) */
         @media (max-width: 768px) {
             body {
                 padding: 0;
@@ -1030,14 +1239,14 @@
             .clear-btn {
                 position: fixed;
                 bottom: 20px;
-                left: -300px; /* Hidden by default */
+                left: -300px;
                 width: calc(280px - 40px);
                 transition: left 0.3s ease;
             }
 
             .sidebar.mobile-open ~ * .clear-btn,
             .sidebar.mobile-open .clear-btn {
-                left: 20px; /* Visible when sidebar open */
+                left: 20px;
             }
 
             /* Overlay when sidebar is open on mobile */
@@ -1062,10 +1271,208 @@
 
             .entity-tags, .suggestion-chips {
                 justify-content: center;
+                flex-wrap: wrap;
             }
-            
+
             .feedback-dimensions {
                 grid-template-columns: 1fr;
+            }
+
+            .status-bar {
+                flex-wrap: wrap;
+                gap: 6px;
+                padding: 8px 12px;
+            }
+
+            .status-indicator {
+                flex: 1 1 auto;
+            }
+
+            .offline-indicators {
+                flex: 1 1 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        /* Small Mobile (max-width: 480px) */
+        @media (max-width: 480px) {
+            .chat-header h2 {
+                font-size: 16px;
+            }
+
+            .chat-header p {
+                font-size: 11px;
+            }
+
+            .settings-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+
+            .status-bar {
+                font-size: 9px;
+                padding: 6px 10px;
+            }
+
+            .offline-indicators {
+                gap: 4px;
+            }
+
+            .connection-status,
+            .queue-indicator {
+                padding: 2px 6px;
+                font-size: 9px;
+            }
+
+            .messages-container {
+                padding: 12px 10px;
+            }
+
+            .message-bubble {
+                max-width: 92%;
+                font-size: 13px;
+                padding: 9px 13px;
+                border-radius: 15px;
+            }
+
+            .message-time {
+                font-size: 9px;
+            }
+
+            .input-area {
+                padding: 8px;
+            }
+
+            .input-actions {
+                gap: 6px;
+            }
+
+            .action-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
+            }
+
+            .input-container input {
+                font-size: 14px;
+                padding: 10px 40px 10px 12px;
+            }
+
+            .send-button {
+                width: 36px;
+                height: 36px;
+            }
+
+            .sidebar {
+                width: 260px;
+            }
+
+            .sidebar.mobile-open {
+                width: 280px;
+            }
+
+            .user-info h3 {
+                font-size: 15px;
+            }
+
+            .user-info p {
+                font-size: 11px;
+            }
+
+            .settings-menu {
+                min-width: 200px;
+                font-size: 13px;
+            }
+
+            .feedback-btn {
+                font-size: 11px;
+                padding: 3px 10px;
+            }
+
+            .entity-tag {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+
+            .suggestion-chip {
+                font-size: 11px;
+                padding: 6px 12px;
+            }
+        }
+
+        /* Extra Small Mobile (max-width: 360px) */
+        @media (max-width: 360px) {
+            .chat-header h2 {
+                font-size: 14px;
+            }
+
+            .chat-header p {
+                font-size: 10px;
+            }
+
+            .status-bar {
+                font-size: 8px;
+                padding: 5px 8px;
+            }
+
+            .connection-status,
+            .queue-indicator {
+                padding: 2px 5px;
+                font-size: 8px;
+            }
+
+            .message-bubble {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+
+            .action-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 13px;
+            }
+
+            .input-container input {
+                font-size: 13px;
+                padding: 9px 36px 9px 10px;
+            }
+
+            .send-button {
+                width: 32px;
+                height: 32px;
+            }
+
+            .sidebar {
+                width: 240px;
+            }
+        }
+
+        /* Landscape Mode for Mobile Devices */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .chat-container {
+                height: 100vh;
+            }
+
+            .messages-container {
+                padding: 10px;
+            }
+
+            .input-area {
+                padding: 8px;
+            }
+
+            .input-actions {
+                display: none; /* Hide extra buttons in landscape */
+            }
+
+            .status-bar {
+                padding: 4px 10px;
+                font-size: 9px;
+            }
+
+            .sidebar {
+                width: 220px;
             }
         }
 
@@ -1312,6 +1719,14 @@
                 <div class="status-indicator">
                     <div class="status-dot"></div>
                     <span>Enhanced AI Online</span>
+                </div>
+                <div class="offline-indicators">
+                    <span id="connectionStatus" class="connection-status online">
+                        <i class="fas fa-wifi"></i> Online
+                    </span>
+                    <span id="queueIndicator" class="queue-indicator" style="display: none;">
+                        <i class="fas fa-clock"></i> <span id="queueCount">0</span> queued
+                    </span>
                 </div>
                 <span id="sessionInfo">NLP Ready</span>
             </div>
@@ -2818,6 +3233,318 @@
 
         // Don't auto-close sidebar - let user close it manually
         // This was causing the sidebar to flash and disappear on mobile
+    </script>
+
+    <!-- Offline Functionality Scripts -->
+    <script src="/static/js/offline-storage.js"></script>
+    <script src="/static/js/message-queue.js"></script>
+    <script src="/static/js/knowledge-cache.js"></script>
+
+    <script>
+        // ============================================
+        // OFFLINE FUNCTIONALITY INTEGRATION
+        // ============================================
+
+        let messageQueue = null;
+        let knowledgeCache = null;
+        let isOfflineMode = false;
+
+        /**
+         * Initialize offline capabilities
+         */
+        async function initOfflineCapabilities() {
+            console.log('[Offline] Initializing offline capabilities...');
+
+            try {
+                // Register service worker
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.register('/static/js/service-worker.js', {
+                        scope: '/'
+                    });
+
+                    console.log('[Offline] Service Worker registered:', registration.scope);
+
+                    // Handle service worker updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New service worker available
+                                console.log('[Offline] New version available - reload to update');
+
+                                // Optionally show update notification to user
+                                if (confirm('A new version of AgriBot is available. Reload to update?')) {
+                                    window.location.reload();
+                                }
+                            }
+                        });
+                    });
+                }
+
+                // Initialize IndexedDB
+                await offlineStorage.init();
+                console.log('[Offline] IndexedDB initialized');
+
+                // Initialize message queue
+                messageQueue = new MessageQueue(offlineStorage);
+                messageQueue.startAutoSync();
+
+                // Setup queue event listeners
+                messageQueue.on('queue-updated', handleQueueUpdate);
+                messageQueue.on('sync-completed', handleSyncComplete);
+                messageQueue.on('message-sent', handleMessageSent);
+                messageQueue.on('message-failed', handleMessageFailed);
+
+                console.log('[Offline] Message queue initialized');
+
+                // Initialize knowledge cache
+                knowledgeCache = new KnowledgeCache(offlineStorage);
+
+                // Check if cache needs refresh
+                const needsRefresh = await knowledgeCache.needsRefresh();
+                if (needsRefresh && navigator.onLine) {
+                    console.log('[Offline] Refreshing knowledge cache...');
+                    knowledgeCache.initializeCache().catch(err => {
+                        console.warn('[Offline] Cache refresh failed:', err);
+                    });
+                } else {
+                    console.log('[Offline] Using existing cache');
+                }
+
+                // Setup connection status listeners
+                setupConnectionListeners();
+
+                // Update initial status
+                updateConnectionStatus();
+
+                console.log('[Offline] Offline capabilities ready');
+
+            } catch (error) {
+                console.error('[Offline] Initialization failed:', error);
+            }
+        }
+
+        /**
+         * Setup connection status listeners
+         */
+        function setupConnectionListeners() {
+            window.addEventListener('online', () => {
+                console.log('[Offline] Connection restored');
+                isOfflineMode = false;
+                updateConnectionStatus();
+
+                // Sync queued messages
+                if (messageQueue) {
+                    messageQueue.syncMessages();
+                }
+
+                // Show notification
+                updateSessionInfo('Back online - syncing...');
+            });
+
+            window.addEventListener('offline', () => {
+                console.log('[Offline] Connection lost');
+                isOfflineMode = true;
+                updateConnectionStatus();
+
+                // Show notification
+                updateSessionInfo('Offline mode - messages will be queued');
+            });
+        }
+
+        /**
+         * Update connection status indicator
+         */
+        function updateConnectionStatus() {
+            const statusEl = document.getElementById('connectionStatus');
+            if (!statusEl) return;
+
+            if (navigator.onLine) {
+                statusEl.className = 'connection-status online';
+                statusEl.innerHTML = '<i class="fas fa-wifi"></i> Online';
+            } else {
+                statusEl.className = 'connection-status offline';
+                statusEl.innerHTML = '<i class="fas fa-wifi-slash"></i> Offline';
+            }
+        }
+
+        /**
+         * Handle queue updates
+         */
+        function handleQueueUpdate(data) {
+            const queueIndicator = document.getElementById('queueIndicator');
+            const queueCount = document.getElementById('queueCount');
+
+            if (!queueIndicator || !queueCount) return;
+
+            if (data.queueSize > 0) {
+                queueIndicator.style.display = 'inline-flex';
+                queueCount.textContent = data.queueSize;
+            } else {
+                queueIndicator.style.display = 'none';
+            }
+        }
+
+        /**
+         * Handle sync completion
+         */
+        function handleSyncComplete(data) {
+            console.log('[Offline] Sync complete:', data);
+
+            if (data.successCount > 0) {
+                updateSessionInfo(`Synced ${data.successCount} message(s)`);
+            }
+
+            if (data.failCount > 0) {
+                console.warn(`[Offline] ${data.failCount} messages failed to sync`);
+            }
+        }
+
+        /**
+         * Handle message sent
+         */
+        function handleMessageSent(data) {
+            console.log('[Offline] Message sent from queue:', data.messageId);
+        }
+
+        /**
+         * Handle message failed
+         */
+        function handleMessageFailed(data) {
+            console.error('[Offline] Message failed:', data.messageId, data.reason);
+        }
+
+        /**
+         * Override sendMessage to handle offline queueing
+         */
+        const originalSendMessage = sendMessage;
+
+        window.sendMessage = async function() {
+            const message = messageInput.value.trim();
+
+            if (!message) return;
+
+            // Check if offline
+            if (!navigator.onLine && messageQueue) {
+                try {
+                    // Queue the message
+                    await messageQueue.queueMessage({
+                        content: message,
+                        timestamp: Date.now()
+                    });
+
+                    // Add to UI as queued
+                    addMessage(message, 'user');
+
+                    // Add bot response
+                    addMessage(
+                        'Your message has been queued and will be sent when you\'re back online.',
+                        'bot'
+                    );
+
+                    // Clear input
+                    messageInput.value = '';
+                    messageCount++;
+
+                    updateSessionInfo(`Message queued (offline)`);
+
+                } catch (error) {
+                    console.error('[Offline] Failed to queue message:', error);
+                    addMessage(
+                        'Sorry, I couldn\'t queue your message. Please try again.',
+                        'bot'
+                    );
+                }
+
+                return;
+            }
+
+            // If online, use original function
+            return originalSendMessage.call(this);
+        };
+
+        /**
+         * Save conversation to IndexedDB
+         */
+        async function saveConversationOffline() {
+            if (!offlineStorage || !offlineStorage.db) return;
+
+            try {
+                const messages = Array.from(document.querySelectorAll('.message')).map((el, index) => ({
+                    conversationId: conversationId || 'default',
+                    content: el.querySelector('.message-content')?.textContent || '',
+                    type: el.classList.contains('user') ? 'user' : 'bot',
+                    timestamp: Date.now() - (messages.length - index) * 1000
+                }));
+
+                // Save conversation metadata
+                await offlineStorage.saveConversation({
+                    id: conversationId || 'default',
+                    sessionId: sessionStorage.getItem('sessionId') || 'default',
+                    timestamp: Date.now(),
+                    metadata: {
+                        messageCount: messageCount,
+                        currentIntent: currentIntentEl?.textContent
+                    }
+                });
+
+                // Save messages
+                for (const message of messages) {
+                    await offlineStorage.saveMessage(message);
+                }
+
+                console.log('[Offline] Conversation saved');
+
+            } catch (error) {
+                console.error('[Offline] Failed to save conversation:', error);
+            }
+        }
+
+        /**
+         * Load conversation from IndexedDB
+         */
+        async function loadConversationOffline() {
+            if (!offlineStorage || !offlineStorage.db) return;
+
+            try {
+                const conversations = await offlineStorage.getAllConversations();
+
+                if (conversations.length > 0) {
+                    const lastConversation = conversations[conversations.length - 1];
+                    const messages = await offlineStorage.getMessagesByConversation(lastConversation.id);
+
+                    console.log('[Offline] Loaded', messages.length, 'messages from cache');
+
+                    // Optionally restore messages to UI
+                    // (uncomment if you want to restore on page load)
+                    // messages.forEach(msg => addMessage(msg.content, msg.type));
+                }
+
+            } catch (error) {
+                console.error('[Offline] Failed to load conversation:', error);
+            }
+        }
+
+        // Initialize offline capabilities when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initOfflineCapabilities();
+
+            // Periodic cleanup of expired cache
+            setInterval(() => {
+                if (offlineStorage && offlineStorage.db) {
+                    offlineStorage.clearExpiredCache();
+                }
+            }, 3600000); // Every hour
+        });
+
+        // Save conversation before unload
+        window.addEventListener('beforeunload', () => {
+            if (offlineStorage && offlineStorage.db) {
+                saveConversationOffline();
+            }
+        });
+
     </script>
 </body>
 </html>

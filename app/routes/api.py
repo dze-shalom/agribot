@@ -364,6 +364,240 @@ def get_analytics_summary():
             'error': 'Failed to retrieve analytics summary'
         }), 500
 
+# ============================================
+# KNOWLEDGE BASE ENDPOINTS FOR OFFLINE CACHING
+# ============================================
+
+@api_bp.route('/knowledge/crops', methods=['GET'])
+def get_knowledge_crops():
+    """Get all crops information for offline caching"""
+    try:
+        knowledge_base = AgriculturalKnowledgeBase()
+        crops = knowledge_base.get_all_crops()
+
+        return jsonify({
+            'success': True,
+            'items': crops,
+            'category': 'crops',
+            'cached_at': datetime.utcnow().isoformat()
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting knowledge crops: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve crops knowledge'
+        }), 500
+
+@api_bp.route('/knowledge/diseases', methods=['GET'])
+def get_knowledge_diseases():
+    """Get all diseases information for offline caching"""
+    try:
+        knowledge_base = AgriculturalKnowledgeBase()
+        # Get diseases for common crops
+        common_crops = ['maize', 'cassava', 'cocoa', 'coffee', 'plantain']
+        diseases = []
+
+        for crop in common_crops:
+            crop_diseases = knowledge_base.get_disease_info(crop)
+            if 'diseases' in crop_diseases:
+                for disease in crop_diseases['diseases']:
+                    disease['crop'] = crop
+                    diseases.append(disease)
+
+        return jsonify({
+            'success': True,
+            'items': diseases,
+            'category': 'diseases',
+            'cached_at': datetime.utcnow().isoformat()
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting knowledge diseases: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve diseases knowledge'
+        }), 500
+
+@api_bp.route('/knowledge/best-practices', methods=['GET'])
+def get_knowledge_best_practices():
+    """Get agricultural best practices for offline caching"""
+    try:
+        knowledge_base = AgriculturalKnowledgeBase()
+
+        practices = [
+            {
+                'topic': 'soil-preparation',
+                'title': 'Soil Preparation',
+                'practices': [
+                    'Clear land of weeds and debris',
+                    'Test soil pH and nutrients',
+                    'Add organic matter/compost',
+                    'Ensure proper drainage',
+                    'Till soil to appropriate depth'
+                ]
+            },
+            {
+                'topic': 'planting',
+                'title': 'Planting Techniques',
+                'practices': [
+                    'Plant at optimal spacing',
+                    'Use quality seeds or seedlings',
+                    'Plant at the right depth',
+                    'Consider companion planting',
+                    'Water immediately after planting'
+                ]
+            },
+            {
+                'topic': 'irrigation',
+                'title': 'Water Management',
+                'practices': [
+                    'Water early morning or evening',
+                    'Use drip irrigation when possible',
+                    'Mulch to retain moisture',
+                    'Avoid overwatering',
+                    'Monitor soil moisture regularly'
+                ]
+            },
+            {
+                'topic': 'fertilization',
+                'title': 'Fertilizer Application',
+                'practices': [
+                    'Use balanced NPK ratios',
+                    'Apply organic fertilizers',
+                    'Follow recommended rates',
+                    'Time applications with growth stages',
+                    'Avoid fertilizer burn'
+                ]
+            },
+            {
+                'topic': 'pest-management',
+                'title': 'Integrated Pest Management',
+                'practices': [
+                    'Regular field monitoring',
+                    'Use resistant varieties',
+                    'Practice crop rotation',
+                    'Employ biological control',
+                    'Use pesticides as last resort'
+                ]
+            }
+        ]
+
+        return jsonify({
+            'success': True,
+            'items': practices,
+            'category': 'best-practices',
+            'cached_at': datetime.utcnow().isoformat()
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting best practices: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve best practices'
+        }), 500
+
+@api_bp.route('/knowledge/seasonal-calendar', methods=['GET'])
+def get_knowledge_seasonal_calendar():
+    """Get seasonal planting calendar for offline caching"""
+    try:
+        calendar = {
+            'rainy_season': {
+                'months': ['March', 'April', 'May', 'June', 'July', 'August', 'September', 'October'],
+                'crops': ['Maize', 'Cassava', 'Plantain', 'Yam', 'Groundnut', 'Rice'],
+                'activities': ['Land preparation', 'Planting', 'Weeding', 'First harvest']
+            },
+            'dry_season': {
+                'months': ['November', 'December', 'January', 'February'],
+                'crops': ['Vegetables', 'Irrigated crops', 'Tree crops maintenance'],
+                'activities': ['Harvest storage crops', 'Irrigation management', 'Soil preparation']
+            }
+        }
+
+        return jsonify({
+            'success': True,
+            'items': calendar,
+            'category': 'seasonal-calendar',
+            'cached_at': datetime.utcnow().isoformat()
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting seasonal calendar: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve seasonal calendar'
+        }), 500
+
+@api_bp.route('/knowledge/<category>', methods=['GET'])
+def get_knowledge_category(category):
+    """Generic endpoint for other knowledge categories"""
+    try:
+        # Map categories to basic data
+        knowledge_data = {
+            'pests': {
+                'items': [
+                    {'name': 'Aphids', 'description': 'Small sap-sucking insects', 'control': 'Neem oil, insecticidal soap'},
+                    {'name': 'Caterpillars', 'description': 'Larvae that eat leaves', 'control': 'Handpicking, Bt spray'},
+                    {'name': 'Mites', 'description': 'Tiny spider-like pests', 'control': 'Water spray, predatory mites'}
+                ]
+            },
+            'soil-management': {
+                'items': [
+                    {'topic': 'composting', 'description': 'Creating organic fertilizer from waste'},
+                    {'topic': 'mulching', 'description': 'Covering soil to retain moisture'},
+                    {'topic': 'cover-cropping', 'description': 'Growing crops to improve soil'}
+                ]
+            },
+            'irrigation': {
+                'items': [
+                    {'method': 'Drip', 'efficiency': 'High', 'description': 'Water delivered directly to roots'},
+                    {'method': 'Sprinkler', 'efficiency': 'Medium', 'description': 'Overhead water distribution'},
+                    {'method': 'Furrow', 'efficiency': 'Low', 'description': 'Water flows in channels'}
+                ]
+            },
+            'fertilizers': {
+                'items': [
+                    {'type': 'NPK', 'nutrients': 'Nitrogen, Phosphorus, Potassium', 'use': 'General growth'},
+                    {'type': 'Compost', 'nutrients': 'Balanced organic', 'use': 'Soil improvement'},
+                    {'type': 'Urea', 'nutrients': 'High nitrogen', 'use': 'Leaf growth'}
+                ]
+            },
+            'weather-tips': {
+                'items': [
+                    {'condition': 'Drought', 'action': 'Mulch heavily, use drought-resistant varieties'},
+                    {'condition': 'Heavy rain', 'action': 'Ensure drainage, protect young plants'},
+                    {'condition': 'Wind', 'action': 'Stake tall plants, use windbreaks'}
+                ]
+            },
+            'market-info': {
+                'items': [
+                    {'tip': 'Harvest at peak quality', 'benefit': 'Better prices'},
+                    {'tip': 'Store properly', 'benefit': 'Reduced losses'},
+                    {'tip': 'Know market days', 'benefit': 'Sell when demand is high'}
+                ]
+            }
+        }
+
+        if category in knowledge_data:
+            return jsonify({
+                'success': True,
+                **knowledge_data[category],
+                'category': category,
+                'cached_at': datetime.utcnow().isoformat()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Unknown knowledge category: {category}'
+            }), 404
+
+    except Exception as e:
+        logger.error(f"Error getting knowledge category {category}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Failed to retrieve {category} knowledge'
+        }), 500
+
 @api_bp.errorhandler(404)
 def api_not_found(error):
     """Handle 404 errors for API routes"""

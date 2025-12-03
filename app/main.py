@@ -165,6 +165,11 @@ def register_main_routes(app):
             'version': '1.0.0'
         }
 
+    @app.route('/offline.html')
+    def offline_page():
+        """Offline fallback page for PWA"""
+        return render_template('offline.html')
+
     # Compatibility endpoints -------------------------------------------------
     # Some frontend templates (older or from src/templates) call /api/analytics
     # and /api/nlp-stats directly. The API blueprint is mounted under /api/v1,
