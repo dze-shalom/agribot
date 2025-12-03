@@ -6,7 +6,25 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="AI-powered agricultural assistant for farmers">
+    <meta name="theme-color" content="#22c55e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="AgriBot">
+
     <title>AgriBot - Enhanced AI Farm Assistant v2.0</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/images/icon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/icon-180x180.png">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -482,6 +500,63 @@
             height: 8px;
             border-radius: 50%;
             background: #4caf50;
+        }
+
+        /* Offline Indicators */
+        .offline-indicators {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+        }
+
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .connection-status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .connection-status.offline {
+            background: #f8d7da;
+            color: #721c24;
+            animation: pulseOffline 2s infinite;
+        }
+
+        @keyframes pulseOffline {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .queue-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: #fff3cd;
+            color: #856404;
+            font-weight: 500;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .messages-container {
@@ -1312,6 +1387,14 @@
                 <div class="status-indicator">
                     <div class="status-dot"></div>
                     <span>Enhanced AI Online</span>
+                </div>
+                <div class="offline-indicators">
+                    <span id="connectionStatus" class="connection-status online">
+                        <i class="fas fa-wifi"></i> Online
+                    </span>
+                    <span id="queueIndicator" class="queue-indicator" style="display: none;">
+                        <i class="fas fa-clock"></i> <span id="queueCount">0</span> queued
+                    </span>
                 </div>
                 <span id="sessionInfo">NLP Ready</span>
             </div>
@@ -2818,6 +2901,318 @@
 
         // Don't auto-close sidebar - let user close it manually
         // This was causing the sidebar to flash and disappear on mobile
+    </script>
+
+    <!-- Offline Functionality Scripts -->
+    <script src="/static/js/offline-storage.js"></script>
+    <script src="/static/js/message-queue.js"></script>
+    <script src="/static/js/knowledge-cache.js"></script>
+
+    <script>
+        // ============================================
+        // OFFLINE FUNCTIONALITY INTEGRATION
+        // ============================================
+
+        let messageQueue = null;
+        let knowledgeCache = null;
+        let isOfflineMode = false;
+
+        /**
+         * Initialize offline capabilities
+         */
+        async function initOfflineCapabilities() {
+            console.log('[Offline] Initializing offline capabilities...');
+
+            try {
+                // Register service worker
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.register('/static/js/service-worker.js', {
+                        scope: '/'
+                    });
+
+                    console.log('[Offline] Service Worker registered:', registration.scope);
+
+                    // Handle service worker updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New service worker available
+                                console.log('[Offline] New version available - reload to update');
+
+                                // Optionally show update notification to user
+                                if (confirm('A new version of AgriBot is available. Reload to update?')) {
+                                    window.location.reload();
+                                }
+                            }
+                        });
+                    });
+                }
+
+                // Initialize IndexedDB
+                await offlineStorage.init();
+                console.log('[Offline] IndexedDB initialized');
+
+                // Initialize message queue
+                messageQueue = new MessageQueue(offlineStorage);
+                messageQueue.startAutoSync();
+
+                // Setup queue event listeners
+                messageQueue.on('queue-updated', handleQueueUpdate);
+                messageQueue.on('sync-completed', handleSyncComplete);
+                messageQueue.on('message-sent', handleMessageSent);
+                messageQueue.on('message-failed', handleMessageFailed);
+
+                console.log('[Offline] Message queue initialized');
+
+                // Initialize knowledge cache
+                knowledgeCache = new KnowledgeCache(offlineStorage);
+
+                // Check if cache needs refresh
+                const needsRefresh = await knowledgeCache.needsRefresh();
+                if (needsRefresh && navigator.onLine) {
+                    console.log('[Offline] Refreshing knowledge cache...');
+                    knowledgeCache.initializeCache().catch(err => {
+                        console.warn('[Offline] Cache refresh failed:', err);
+                    });
+                } else {
+                    console.log('[Offline] Using existing cache');
+                }
+
+                // Setup connection status listeners
+                setupConnectionListeners();
+
+                // Update initial status
+                updateConnectionStatus();
+
+                console.log('[Offline] Offline capabilities ready');
+
+            } catch (error) {
+                console.error('[Offline] Initialization failed:', error);
+            }
+        }
+
+        /**
+         * Setup connection status listeners
+         */
+        function setupConnectionListeners() {
+            window.addEventListener('online', () => {
+                console.log('[Offline] Connection restored');
+                isOfflineMode = false;
+                updateConnectionStatus();
+
+                // Sync queued messages
+                if (messageQueue) {
+                    messageQueue.syncMessages();
+                }
+
+                // Show notification
+                updateSessionInfo('Back online - syncing...');
+            });
+
+            window.addEventListener('offline', () => {
+                console.log('[Offline] Connection lost');
+                isOfflineMode = true;
+                updateConnectionStatus();
+
+                // Show notification
+                updateSessionInfo('Offline mode - messages will be queued');
+            });
+        }
+
+        /**
+         * Update connection status indicator
+         */
+        function updateConnectionStatus() {
+            const statusEl = document.getElementById('connectionStatus');
+            if (!statusEl) return;
+
+            if (navigator.onLine) {
+                statusEl.className = 'connection-status online';
+                statusEl.innerHTML = '<i class="fas fa-wifi"></i> Online';
+            } else {
+                statusEl.className = 'connection-status offline';
+                statusEl.innerHTML = '<i class="fas fa-wifi-slash"></i> Offline';
+            }
+        }
+
+        /**
+         * Handle queue updates
+         */
+        function handleQueueUpdate(data) {
+            const queueIndicator = document.getElementById('queueIndicator');
+            const queueCount = document.getElementById('queueCount');
+
+            if (!queueIndicator || !queueCount) return;
+
+            if (data.queueSize > 0) {
+                queueIndicator.style.display = 'inline-flex';
+                queueCount.textContent = data.queueSize;
+            } else {
+                queueIndicator.style.display = 'none';
+            }
+        }
+
+        /**
+         * Handle sync completion
+         */
+        function handleSyncComplete(data) {
+            console.log('[Offline] Sync complete:', data);
+
+            if (data.successCount > 0) {
+                updateSessionInfo(`Synced ${data.successCount} message(s)`);
+            }
+
+            if (data.failCount > 0) {
+                console.warn(`[Offline] ${data.failCount} messages failed to sync`);
+            }
+        }
+
+        /**
+         * Handle message sent
+         */
+        function handleMessageSent(data) {
+            console.log('[Offline] Message sent from queue:', data.messageId);
+        }
+
+        /**
+         * Handle message failed
+         */
+        function handleMessageFailed(data) {
+            console.error('[Offline] Message failed:', data.messageId, data.reason);
+        }
+
+        /**
+         * Override sendMessage to handle offline queueing
+         */
+        const originalSendMessage = sendMessage;
+
+        window.sendMessage = async function() {
+            const message = messageInput.value.trim();
+
+            if (!message) return;
+
+            // Check if offline
+            if (!navigator.onLine && messageQueue) {
+                try {
+                    // Queue the message
+                    await messageQueue.queueMessage({
+                        content: message,
+                        timestamp: Date.now()
+                    });
+
+                    // Add to UI as queued
+                    addMessage(message, 'user');
+
+                    // Add bot response
+                    addMessage(
+                        'Your message has been queued and will be sent when you\'re back online.',
+                        'bot'
+                    );
+
+                    // Clear input
+                    messageInput.value = '';
+                    messageCount++;
+
+                    updateSessionInfo(`Message queued (offline)`);
+
+                } catch (error) {
+                    console.error('[Offline] Failed to queue message:', error);
+                    addMessage(
+                        'Sorry, I couldn\'t queue your message. Please try again.',
+                        'bot'
+                    );
+                }
+
+                return;
+            }
+
+            // If online, use original function
+            return originalSendMessage.call(this);
+        };
+
+        /**
+         * Save conversation to IndexedDB
+         */
+        async function saveConversationOffline() {
+            if (!offlineStorage || !offlineStorage.db) return;
+
+            try {
+                const messages = Array.from(document.querySelectorAll('.message')).map((el, index) => ({
+                    conversationId: conversationId || 'default',
+                    content: el.querySelector('.message-content')?.textContent || '',
+                    type: el.classList.contains('user') ? 'user' : 'bot',
+                    timestamp: Date.now() - (messages.length - index) * 1000
+                }));
+
+                // Save conversation metadata
+                await offlineStorage.saveConversation({
+                    id: conversationId || 'default',
+                    sessionId: sessionStorage.getItem('sessionId') || 'default',
+                    timestamp: Date.now(),
+                    metadata: {
+                        messageCount: messageCount,
+                        currentIntent: currentIntentEl?.textContent
+                    }
+                });
+
+                // Save messages
+                for (const message of messages) {
+                    await offlineStorage.saveMessage(message);
+                }
+
+                console.log('[Offline] Conversation saved');
+
+            } catch (error) {
+                console.error('[Offline] Failed to save conversation:', error);
+            }
+        }
+
+        /**
+         * Load conversation from IndexedDB
+         */
+        async function loadConversationOffline() {
+            if (!offlineStorage || !offlineStorage.db) return;
+
+            try {
+                const conversations = await offlineStorage.getAllConversations();
+
+                if (conversations.length > 0) {
+                    const lastConversation = conversations[conversations.length - 1];
+                    const messages = await offlineStorage.getMessagesByConversation(lastConversation.id);
+
+                    console.log('[Offline] Loaded', messages.length, 'messages from cache');
+
+                    // Optionally restore messages to UI
+                    // (uncomment if you want to restore on page load)
+                    // messages.forEach(msg => addMessage(msg.content, msg.type));
+                }
+
+            } catch (error) {
+                console.error('[Offline] Failed to load conversation:', error);
+            }
+        }
+
+        // Initialize offline capabilities when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initOfflineCapabilities();
+
+            // Periodic cleanup of expired cache
+            setInterval(() => {
+                if (offlineStorage && offlineStorage.db) {
+                    offlineStorage.clearExpiredCache();
+                }
+            }, 3600000); // Every hour
+        });
+
+        // Save conversation before unload
+        window.addEventListener('beforeunload', () => {
+            if (offlineStorage && offlineStorage.db) {
+                saveConversationOffline();
+            }
+        });
+
     </script>
 </body>
 </html>
