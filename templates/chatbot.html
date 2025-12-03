@@ -18,7 +18,7 @@
     <title>AgriBot - Enhanced AI Farm Assistant v2.0</title>
 
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/static/manifest.json">
+    <link rel="manifest" href="/manifest.json">
 
     <!-- Icons -->
     <link rel="icon" type="image/png" sizes="32x32" href="/static/images/icon-32x32.png">
@@ -3258,7 +3258,7 @@
             try {
                 // Register service worker
                 if ('serviceWorker' in navigator) {
-                    const registration = await navigator.serviceWorker.register('/static/js/service-worker.js', {
+                    const registration = await navigator.serviceWorker.register('/service-worker.js', {
                         scope: '/'
                     });
 
