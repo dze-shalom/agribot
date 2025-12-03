@@ -170,6 +170,38 @@ def register_main_routes(app):
         """Offline fallback page for PWA"""
         return render_template('offline.html')
 
+    @app.route('/service-worker.js')
+    def service_worker():
+        """Serve service worker from root with correct headers"""
+        from flask import send_from_directory, make_response
+        import os
+
+        # Get the path to the service worker file
+        static_folder = os.path.join(os.getcwd(), 'static', 'js')
+
+        # Create response with the service worker file
+        response = make_response(send_from_directory(static_folder, 'service-worker.js'))
+
+        # Set correct MIME type
+        response.headers['Content-Type'] = 'application/javascript'
+
+        # Allow service worker to control the entire site
+        response.headers['Service-Worker-Allowed'] = '/'
+
+        # Disable caching during development
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+
+        return response
+
+    @app.route('/manifest.json')
+    def manifest():
+        """Serve PWA manifest from root"""
+        from flask import send_from_directory
+        import os
+
+        static_folder = os.path.join(os.getcwd(), 'static')
+        return send_from_directory(static_folder, 'manifest.json', mimetype='application/manifest+json')
+
     # Compatibility endpoints -------------------------------------------------
     # Some frontend templates (older or from src/templates) call /api/analytics
     # and /api/nlp-stats directly. The API blueprint is mounted under /api/v1,

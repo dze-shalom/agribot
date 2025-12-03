@@ -8,24 +8,17 @@ const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const KNOWLEDGE_CACHE = `${CACHE_VERSION}-knowledge`;
 
-// Static assets to cache on install
+// Static assets to cache on install (only essential ones)
 const STATIC_ASSETS = [
-    '/',
-    '/chatbot',
-    '/static/css/chatbot.css',
-    '/static/js/chatbot-enhanced.js',
-    '/static/css/auth.css',
-    '/static/images/logo.png',
-    '/static/images/bot-avatar.png',
-    '/static/images/user-avatar.png',
+    '/chatbot.html',
     '/offline.html'
 ];
 
 // Knowledge base endpoints to cache
 const KNOWLEDGE_ENDPOINTS = [
-    '/api/crops',
-    '/api/diseases',
-    '/api/best-practices'
+    '/api/knowledge/crops',
+    '/api/knowledge/diseases',
+    '/api/knowledge/best-practices'
 ];
 
 // Maximum cache sizes
@@ -42,7 +35,15 @@ self.addEventListener('install', (event) => {
         caches.open(STATIC_CACHE)
             .then(cache => {
                 console.log('[Service Worker] Caching static assets');
-                return cache.addAll(STATIC_ASSETS);
+                // Cache assets individually so one failure doesn't break installation
+                return Promise.all(
+                    STATIC_ASSETS.map(url => {
+                        return cache.add(url).catch(err => {
+                            console.warn(`[Service Worker] Failed to cache ${url}:`, err);
+                            // Continue even if this asset fails
+                        });
+                    })
+                );
             })
             .then(() => {
                 console.log('[Service Worker] Skip waiting');
@@ -50,6 +51,8 @@ self.addEventListener('install', (event) => {
             })
             .catch(error => {
                 console.error('[Service Worker] Installation failed:', error);
+                // Still skip waiting to activate service worker
+                return self.skipWaiting();
             })
     );
 });
